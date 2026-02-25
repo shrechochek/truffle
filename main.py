@@ -63,6 +63,46 @@ def encode_base64(data):
                 
     return result
 
+def encode_base32(data):
+    ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+
+    binary_str = "".join(f"{b:08b}" for b in data)
+    
+    padding_bits = (5 - len(binary_str) % 5) % 5
+    binary_str += "0" * padding_bits
+    
+    result = ""
+    for i in range(0, len(binary_str), 5):
+        chunk = binary_str[i:i+5]
+        result += ALPHABET[int(chunk, 2)]
+    
+    while len(result) % 8 != 0:
+        result += "="
+        
+    return result
+
+def encode_base45(data):
+    ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+    
+    result = ""
+    for i in range(0, len(data) - 1, 2):
+        val = (data[i] << 8) + data[i+1]
+        
+        c, rem = divmod(val, 45 * 45)
+        b, a = divmod(rem, 45)
+        result += ALPHABET[a] + ALPHABET[b] + ALPHABET[c]
+        
+    if len(data) % 2 != 0:
+        val = data[-1]
+        b, a = divmod(val, 45)
+        result += ALPHABET[a] + ALPHABET[b]
+        
+    return result
+
 # === searchers ===
 
 def default_search(text: list[str], search: str):
