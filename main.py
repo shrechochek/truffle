@@ -132,13 +132,25 @@ def base64_reverse_search(text: list[str], search: str):
 def base58_search(text: list[str], search: str):
     text = "".join(text)
     search = encode_base58(search)
-    search = search.replace("=", "")
 
     return search in text
 
 def base58_reverse_search(text: list[str], search: str):
     text = "".join(text)
     search = encode_base58(search)
+
+    return search[::-1] in text
+
+def base32_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_base32(search)
+    search = search.replace("=", "")
+
+    return search in text
+
+def base32_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_base32(search)
     search = search.replace("=", "")
 
     return search[::-1] in text
