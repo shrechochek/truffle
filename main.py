@@ -1,3 +1,4 @@
+import sys
 from encoders import *
 from decoders import *
 import core
@@ -208,15 +209,22 @@ searchers = [default_search, default_reverse_search, base64_search, base64_rever
              rot_search,     rot_reverse_search,     binary_search, binary_reverse_search, morse_search,  morse_reverse_search,
              atbash_search,  atbash_reverse_search,  url_search,    url_reverse_search]
 
-decoders = [do_nothing,    decode_base64, decode_base58,
+decoders = [do_nothing,   decode_base64, decode_base58,
            decode_base32, decode_base45, decode_base62,
            decode_base85, decode_base92, decode_hex,
-           decode_rot, decode_binary, decode_morse,
+           decode_rot,    decode_binary, decode_morse,
            decode_atbash, decode_url]
 
-strings = core.get_strings("example.png")
+sys_arguments = sys.argv[1:]
+if len(sys_arguments) != 2:
+    print(f"{core.Colors.BRIGHT_RED}incorrect number of arguments{core.Colors.END}")
+    sys.exit(1)
+
+file_name = sys_arguments[0]
+strings = core.get_strings(file_name)
 plain_strings = "".join(strings)
-search_text = "uuu"
+
+search_text = sys_arguments[1]
 
 # === finder ===
 
