@@ -29,8 +29,7 @@ strings = get_strings("example.png")
 def encode_base58(data):
     ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
     
-    if isinstance(data, str):
-        data = data.encode('utf-8')
+    if isinstance(data, str): data = data.encode('utf-8')
     padding = len(data) - len(data.lstrip(b'\0'))
     
     num = int.from_bytes(data, 'big')
@@ -45,8 +44,7 @@ def encode_base58(data):
 def encode_base64(data):
     ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     
-    if isinstance(data, str):
-        data = data.encode('utf-8')
+    if isinstance(data, str): data = data.encode('utf-8')
     
     result = ""
     for i in range(0, len(data), 3):
@@ -65,8 +63,7 @@ def encode_base64(data):
 
 def encode_base32(data):
     ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
-    if isinstance(data, str):
-        data = data.encode('utf-8')
+    if isinstance(data, str): data = data.encode('utf-8')
 
     binary_str = "".join(f"{b:08b}" for b in data)
     
@@ -85,8 +82,7 @@ def encode_base32(data):
 
 def encode_base45(data):
     ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
-    if isinstance(data, str):
-        data = data.encode('utf-8')
+    if isinstance(data, str): data = data.encode('utf-8')
     
     result = ""
     for i in range(0, len(data) - 1, 2):
@@ -103,7 +99,55 @@ def encode_base45(data):
         
     return result
 
+def encode_base62(data):
+    ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+    if isinstance(data, str): data = data.encode('utf-8')
+    
+    num = int.from_bytes(data, 'big')
+    if num == 0: return ALPHABET[0]
+    
+    result = ""
+    while num > 0:
+        num, rem = divmod(num, 62)
+        result = ALPHABET[rem] + result
+
+    return result
+
+def encode_base85(data):
+    ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
+    if isinstance(data, str): data = data.encode('utf-8')
+    
+    padding = (4 - len(data) % 4) % 4
+    data += b'\0' * padding
+    
+    result = ""
+    for i in range(0, len(data), 4):
+        val = int.from_bytes(data[i:i+4], 'big')
+        chunk = ""
+        for _ in range(5):
+            val, rem = divmod(val, 85)
+            chunk = ALPHABET[rem] + chunk
+        result += chunk
+    
+    return result
+
+def encode_base92(text):
+    ALPHABET = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+               "[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+    if isinstance(data, str): data = data.encode('utf-8')
+    
+    val = int.from_bytes(text.encode('utf-8'), 'big')
+    res = []
+    
+    while val > 0:
+        val, rem = divmod(val, 92)
+        res.append(ALPHABET[rem])
+        
+    return "".join(reversed(res)) if res else ALPHABET[0]
+
 # === searchers ===
+
+# --- default
 
 def default_search(text: list[str], search: str):
     text = "".join(text)
@@ -114,6 +158,8 @@ def default_reverse_search(text: list[str], search: str):
     text = "".join(text)
 
     return search[::-1] in text
+
+# --- base64
 
 def base64_search(text: list[str], search: str):
     text = "".join(text)
@@ -129,6 +175,8 @@ def base64_reverse_search(text: list[str], search: str):
 
     return search[::-1] in text
 
+# --- base58
+
 def base58_search(text: list[str], search: str):
     text = "".join(text)
     search = encode_base58(search)
@@ -140,6 +188,8 @@ def base58_reverse_search(text: list[str], search: str):
     search = encode_base58(search)
 
     return search[::-1] in text
+
+# --- base32
 
 def base32_search(text: list[str], search: str):
     text = "".join(text)
@@ -154,6 +204,8 @@ def base32_reverse_search(text: list[str], search: str):
     search = search.replace("=", "")
 
     return search[::-1] in text
+
+# --- base45
 
 def base45_search(text: list[str], search: str):
     text = "".join(text)
