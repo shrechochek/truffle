@@ -1,6 +1,7 @@
 import sys
 from encoders import *
-from decoders import *
+# from decoders import *
+import decoders
 import core
 
 # === searchers ===
@@ -23,6 +24,7 @@ def base64_search(text: list[str], search: str):
     text = "".join(text)
     search = encode_base64(search)
     search = search.replace("=", "")
+    search = search[:-1] # cut for search improvement
 
     return core.find_all_indices(text, search)
 
@@ -30,6 +32,7 @@ def base64_reverse_search(text: list[str], search: str):
     text = "".join(text)
     search = encode_base64(search)
     search = search.replace("=", "")
+    search = search[:-1] # cut for search improvement
 
     return core.find_all_indices(text, search[::-1])
 
@@ -209,11 +212,11 @@ searchers = [default_search, default_reverse_search, base64_search, base64_rever
              rot_search,     rot_reverse_search,     binary_search, binary_reverse_search, morse_search,  morse_reverse_search,
              atbash_search,  atbash_reverse_search,  url_search,    url_reverse_search]
 
-decoders = [do_nothing,   decode_base64, decode_base58,
-           decode_base32, decode_base45, decode_base62,
-           decode_base85, decode_base92, decode_hex,
-           decode_rot,    decode_binary, decode_morse,
-           decode_atbash, decode_url]
+decoder_functions = [decoders.do_nothing,    decoders.decode_base64, decoders.decode_base58,
+                     decoders.decode_base32, decoders.decode_base45, decoders.decode_base62,
+                     decoders.decode_base85, decoders.decode_base92, decoders.decode_hex,
+                     decoders.decode_rot,    decoders.decode_binary, decoders.decode_morse,
+                     decoders.decode_atbash, decoders.decode_url]
 
 sys_arguments = sys.argv[1:]
 if len(sys_arguments) != 2:
@@ -258,7 +261,7 @@ def find_all():
                     if i % 2 == 1: # without reverse
                         text_cut = text_cut[::-1]
 
-                    result = decoders[(i)//2](text_cut)
+                    result = decoder_functions[(i)//2](text_cut)
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
 
@@ -272,7 +275,7 @@ def find_all():
                     if i % 2 == 1: # without reverse
                         text_cut = text_cut[::-1]
 
-                    result = decoders[(i)//2](text_cut)
+                    result = decoder_functions[(i)//2](text_cut)
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
 
@@ -286,7 +289,7 @@ def find_all():
                     if i % 2 == 1: # without reverse
                         text_cut = text_cut[::-1]
 
-                    result = decoders[(i)//2](text_cut)
+                    result = decoder_functions[(i)//2](text_cut)
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
 
