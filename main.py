@@ -26,7 +26,7 @@ strings = get_strings("example.png")
 
 # === encoders ===
 
-def encode_base58(data):
+def encode_base58(data: str) -> str:
     ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
     
     if isinstance(data, str): data = data.encode('utf-8')
@@ -41,7 +41,7 @@ def encode_base58(data):
     
     return (ALPHABET[0] * padding) + result
 
-def encode_base64(data):
+def encode_base64(data: str) -> str:
     ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     
     if isinstance(data, str): data = data.encode('utf-8')
@@ -61,7 +61,7 @@ def encode_base64(data):
                 
     return result
 
-def encode_base32(data):
+def encode_base32(data: str) -> str:
     ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
     if isinstance(data, str): data = data.encode('utf-8')
 
@@ -80,7 +80,7 @@ def encode_base32(data):
         
     return result
 
-def encode_base45(data):
+def encode_base45(data: str) -> str:
     ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
     if isinstance(data, str): data = data.encode('utf-8')
     
@@ -99,7 +99,7 @@ def encode_base45(data):
         
     return result
 
-def encode_base62(data):
+def encode_base62(data: str) -> str:
     ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
     if isinstance(data, str): data = data.encode('utf-8')
     
@@ -113,7 +113,7 @@ def encode_base62(data):
 
     return result
 
-def encode_base85(data):
+def encode_base85(data: str) -> str:
     ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&<>()[]{}@%$#"
     if isinstance(data, str): data = data.encode('utf-8')
     
@@ -131,7 +131,7 @@ def encode_base85(data):
     
     return result
 
-def encode_base92(data):
+def encode_base92(data: str) -> str:
     ALPHABET = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
                "[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
     if isinstance(data, str): data = data.encode('utf-8')
@@ -145,7 +145,7 @@ def encode_base92(data):
         
     return "".join(reversed(res)) if res else ALPHABET[0]
 
-def encode_hex(data):
+def encode_hex(data: str) -> str:
     result = ""
 
     for letter in data:
@@ -153,6 +153,20 @@ def encode_hex(data):
         result += hex(int_letter)[2:]
 
     return result
+
+def rot(data: str, offset: int) -> str:
+    ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+    ALPHABET_UPPER = ALPHABET.upper()
+
+    result = ""
+
+    for letter in data:
+        if letter in ALPHABET:
+            result += ALPHABET[(ALPHABET.find(letter) + offset) % len(ALPHABET)]
+        elif letter in ALPHABET_UPPER:
+            result += ALPHABET_UPPER[(ALPHABET_UPPER.find(letter) + offset) % len(ALPHABET_UPPER)]
+        else:
+            result += letter
 
 # === searchers ===
 
