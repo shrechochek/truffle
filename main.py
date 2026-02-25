@@ -233,4 +233,18 @@ def base62_reverse_search(text: list[str], search: str):
 
     return search[::-1] in text
 
+# --- base85
+
+def base85_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_base85(search)
+
+    return search in text
+
+def base85_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_base85(search)
+
+    return search[::-1] in text
+
 print(encode_base64("test"))
