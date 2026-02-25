@@ -168,6 +168,20 @@ def encode_rot(data: str, offset: int) -> str:
         else:
             result += letter
 
+def enncode_binary(data: str, spaces: bool) -> str:
+    result = ""
+
+    for letter in data:
+        bin_letter = bin(ord(letter))[2:]
+        result += "0" * (8 - len(bin_letter)) + bin_letter
+
+        if spaces: result += " "
+
+    if spaces:
+        result = result[:-1]
+
+    return result
+
 # === searchers ===
 
 # --- default
@@ -306,11 +320,25 @@ def rot_search(text: list[str], search: str, offset: int):
 
     return search in text
 
-def rot_search(text: list[str], search: str, offset: int):
+def rot_reverse_search(text: list[str], search: str, offset: int):
     text = "".join(text)
     search = encode_rot(search, offset)
 
     return search[::-1] in text
 
+# --- binary
 
-print(encode_hex("test"))
+def binary_search(text: list[str], search: str, spaces: bool):
+    text = "".join(text)
+    search = enncode_binary(search, spaces)
+
+    return search in text
+
+def binary_reverse_search(text: list[str], search: str, spaces: bool):
+    text = "".join(text)
+    search = enncode_binary(search, spaces)
+
+    return search[::-1] in text
+
+
+print(enncode_binary("pico", True))
