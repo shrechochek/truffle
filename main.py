@@ -1,28 +1,5 @@
 from encoders import *
-import string
-
-# === strings function ===
-
-def get_strings(file_path, min_len=4):
-    with open(file_path, "rb") as f:
-        content = f.read()
-    printable_bytes = set(range(32, 127)) 
-    
-    result = []
-    current_str = bytearray()
-    
-    for byte in content:
-        if byte in printable_bytes:
-            current_str.append(byte)
-        else:
-            if len(current_str) >= min_len:
-                result.append(current_str.decode('ascii', errors='ignore'))
-            current_str = bytearray()
-
-    if len(current_str) >= min_len:
-        result.append(current_str.decode('ascii', errors='ignore'))
-            
-    return result
+import core
 
 # === searchers ===
 
@@ -226,7 +203,7 @@ def url_reverse_search(text: list[str], search: str):
 
     return text.find(search[::-1])
 
-strings = get_strings("example.png")
+strings = core.get_strings("example.png")
 
 # print(encode_atbash("pico"))
 print(default_reverse_search(strings, "uuu"))
