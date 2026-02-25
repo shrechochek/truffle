@@ -206,5 +206,5 @@ def decode_url(data: str) -> str:
     except UnicodeDecodeError:
         return ""
 
-def do_nothing(data: str) -> str:
+def no_decode(data: str) -> str:
     return data

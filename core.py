@@ -88,7 +88,7 @@ searcher_functions = [searchers.default_search, searchers.default_reverse_search
              searchers.rot_search,     searchers.rot_reverse_search,     searchers.binary_search, searchers.binary_reverse_search, searchers.morse_search,  searchers.morse_reverse_search,
              searchers.atbash_search,  searchers.atbash_reverse_search,  searchers.url_search,    searchers.url_reverse_search]
 
-decoder_functions = [decoders.do_nothing,    decoders.decode_base64, decoders.decode_base58,
+decoder_functions = [decoders.no_decode,    decoders.decode_base64, decoders.decode_base58,
                      decoders.decode_base32, decoders.decode_base45, decoders.decode_base62,
                      decoders.decode_base85, decoders.decode_base92, decoders.decode_hex,
                      decoders.decode_rot,    decoders.decode_binary, decoders.decode_morse,
