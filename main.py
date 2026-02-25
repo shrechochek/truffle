@@ -67,10 +67,12 @@ def encode_base64(data):
 
 def default_search(text: list[str], search: str):
     text = "".join(text)
+
     return search in text
 
 def default_reverse_search(text: list[str], search: str):
     text = "".join(text)
+
     return search[::-1] in text
 
 def base64_search(text: list[str], search: str):
@@ -83,6 +85,20 @@ def base64_search(text: list[str], search: str):
 def base64_reverse_search(text: list[str], search: str):
     text = "".join(text)
     search = encode_base64(search)
+    search = search.replace("=", "")
+
+    return search[::-1] in text
+
+def base58_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_base58(search)
+    search = search.replace("=", "")
+
+    return search in text
+
+def base58_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_base58(search)
     search = search.replace("=", "")
 
     return search[::-1] in text
