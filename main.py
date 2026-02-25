@@ -1,4 +1,5 @@
 from encoders import *
+from decoders import *
 import core
 
 # === searchers ===
@@ -7,8 +8,6 @@ import core
 
 def default_search(text: list[str], search: str):
     text = "".join(text)
-
-    print(text)
 
     return core.find_all_indices(text, search)
 
@@ -203,12 +202,85 @@ def url_reverse_search(text: list[str], search: str):
 
     return core.find_all_indices(text, search[::-1])
 
-strings = core.get_strings("example.png")
+searchers = [default_search, default_reverse_search, base64_search, base64_reverse_search, base58_search, base58_reverse_search,
+             base32_search,  base32_reverse_search,  base45_search, base45_reverse_search, base62_search, base62_reverse_search,
+             base85_search,  base85_reverse_search,  base92_search, base92_reverse_search, hex_search,    hex_reverse_search,
+             rot_search,     rot_reverse_search,     binary_search, binary_reverse_search, morse_search,  morse_reverse_search,
+             atbash_search,  atbash_reverse_search,  url_search,    url_reverse_search]
 
-# print(encode_atbash("pico"))
-print(strings)
-print(default_reverse_search(strings, "uuu"))
+decoders = [do_nothing,    decode_base64, decode_base58,
+           decode_base32, decode_base45, decode_base62,
+           decode_base85, decode_base92, decode_hex,
+           decode_rot, decode_binary, decode_morse,
+           decode_atbash, decode_url]
+
+strings = core.get_strings("example.png")
+plain_strings = "".join(strings)
+search_text = "uuu"
 
 # === finder ===
 
-# def find_all():
+def find_all():
+    for i in range(len(searchers)):
+        searcher = searchers[i]
+        if searcher == rot_search or searcher == rot_reverse_search: # rot check
+            for j in range(1,26):
+                search_result = searcher(strings, search_text, j)
+
+                if len(search_result) > 0:
+                    print(f"Found results for {core.Colors.YELLOW}{str(searcher.__name__)}{core.Colors.END} {core.Colors.BLUE}offset = {str(j)}{core.Colors.END}")
+                    for index in search_result:
+                        print(f"{core.Colors.GREEN}index: {index}{core.Colors.END}") #plain_strings
+                        text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
+                        if i % 2 == 1: # without reverse
+                            text_cut = text_cut[::-1]
+
+                        result = decode_rot(text_cut, j)
+                        search_text_position = result.find(search_text)
+                        print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
+
+        elif searcher == binary_search or searcher == binary_reverse_search:
+            search_result = searcher(strings, search_text, True)
+
+            if len(search_result) > 0:
+                print(f"Found results for {core.Colors.YELLOW}{str(searcher.__name__)}{core.Colors.END} {core.Colors.BLUE}spaces = True{core.Colors.END}")
+                for index in search_result:
+                    print(f"{core.Colors.GREEN}index: {index}{core.Colors.END}") #plain_strings
+                    text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
+                    if i % 2 == 1: # without reverse
+                        text_cut = text_cut[::-1]
+
+                    result = decoders[(i)//2](text_cut)
+                    search_text_position = result.find(search_text)
+                    print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
+
+            search_result = searcher(strings, search_text, False)
+
+            if len(search_result) > 0:
+                print(f"Found results for {core.Colors.YELLOW}{str(searcher.__name__)}{core.Colors.END} {core.Colors.BLUE}spaces = False{core.Colors.END}")
+                for index in search_result:
+                    print(f"{core.Colors.GREEN}index: {index}{core.Colors.END}") #plain_strings
+                    text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
+                    if i % 2 == 1: # without reverse
+                        text_cut = text_cut[::-1]
+
+                    result = decoders[(i)//2](text_cut)
+                    search_text_position = result.find(search_text)
+                    print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
+
+        else:
+            search_result = searcher(strings, search_text)
+            if len(search_result) > 0:
+                print(f"Found results for {core.Colors.YELLOW}{str(searcher.__name__)}{core.Colors.END}")
+                for index in search_result:
+                    print(f"{core.Colors.GREEN}index: {index}{core.Colors.END}") #plain_strings
+                    text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
+                    if i % 2 == 1: # without reverse
+                        text_cut = text_cut[::-1]
+
+                    result = decoders[(i)//2](text_cut)
+                    search_text_position = result.find(search_text)
+                    print(f"{result[:search_text_position]}{core.Colors.RED}{search_text}{core.Colors.END}{result[search_text_position+len(search_text):]}")
+
+print(core.pig_art)
+find_all()
