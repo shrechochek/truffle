@@ -1,4 +1,7 @@
 import string
+import base64
+
+# === strings function ===
 
 def get_strings(file_path):
     with open(file_path, "rb") as f:
@@ -21,9 +24,35 @@ def get_strings(file_path):
 
 strings = get_strings("example.png")
 
-def classic_search(strings: list[str], search: str):
-    string = "".join(strings)
-    print(string)
-    return search in string
+# === searchers ===
 
-print(classic_search(strings, "b"))
+def default_search(text: list[str], search: str):
+    text = "".join(text)
+    return search in text
+
+def default_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    return search[::-1] in text
+
+def base64_search(text: list[str], search: str):
+    text = "".join(text)
+    search = search.encode("utf-8")
+    search = base64.b64encode(search)
+    search = search.decode("ascii")
+    search = search.replace("=", "")
+
+    return search in text
+
+def base64_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = search.encode("utf-8")
+    search = base64.b64encode(search)
+    search = search.decode("ascii")
+    search = search.replace("=", "")
+
+    return search in text
+
+
+
+
+print(base64_search(strings, "b"))
