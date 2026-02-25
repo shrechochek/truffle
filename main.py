@@ -1,5 +1,4 @@
 import string
-import base64
 
 # === strings function ===
 
@@ -168,6 +167,8 @@ def encode_rot(data: str, offset: int) -> str:
         else:
             result += letter
 
+    return result
+
 def enncode_binary(data: str, spaces: bool) -> str:
     result = ""
 
@@ -211,20 +212,19 @@ def encode_morse(data: str) -> str:
 
 def encode_atbash(data: str) -> str:
     ALPHABET = "abcdefghijklmnopqrstuvwxyz"
-    ALPHABET_UPPER = ALPHABET.UPPER()
+    ALPHABET_UPPER = ALPHABET.upper()
 
     result = ""
 
     for letter in data:
         if letter in ALPHABET:
-            result += ALPHABET[ALPHABET.find(letter) - len(ALPHABET)//2]
+            result += ALPHABET[-ALPHABET.find(letter)-1]
         elif letter in ALPHABET_UPPER:
-            result += ALPHABET_UPPER[ALPHABET_UPPER.find(letter) - len(ALPHABET_UPPER)//2]
+            result += ALPHABET_UPPER[-ALPHABET_UPPER.find(letter)-1]
         else:
             result += letter
 
     return result
-
 
 # === searchers ===
 
@@ -398,5 +398,19 @@ def morse_reverse_search(text: list[str], search: str):
 
     return search[::-1] in text
 
+# --- atbash
 
-print(encode_morse("pico"))
+def atbash_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_atbash(search)
+
+    return search in text
+
+def atbash_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_atbash(search)
+
+    return search[::-1] in text
+
+
+print(encode_atbash("pico"))
