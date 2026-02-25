@@ -95,8 +95,11 @@ decoder_functions = [decoders.no_decode,    decoders.decode_base64, decoders.dec
                      decoders.decode_atbash, decoders.decode_url]
 
 
-def find_all(strings, search_text: str):
-    plain_strings =  "".join(strings)
+def find_all(strings, search_text: str, recursive: bool = False, _depth: int = 0, _max_depth: int = 5):
+    if _depth > _max_depth:
+        return  
+
+    plain_strings = "".join(strings)
     for i in range(len(searcher_functions)):
         searcher = searcher_functions[i]
         if searcher == searchers.rot_search or searcher == searchers.rot_reverse_search: # rot check
@@ -115,6 +118,11 @@ def find_all(strings, search_text: str):
                         search_text_position = result.find(search_text)
                         print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
+                        if recursive and _depth < _max_depth:
+                            if result and result != plain_strings:
+                                print(f"  {Colors.CYAN}[recursive depth={_depth+1}] Searching inside decoded result...{Colors.END}")
+                                find_all([result], search_text, recursive=True, _depth=_depth+1, _max_depth=_max_depth)
+
         elif searcher == searchers.binary_search or searcher == searchers.binary_reverse_search:
             search_result = searcher(strings, search_text, True)
 
@@ -130,6 +138,11 @@ def find_all(strings, search_text: str):
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
+                    if recursive and _depth < _max_depth:
+                        if result and result != plain_strings:
+                            print(f"  {Colors.CYAN}[recursive depth={_depth+1}] Searching inside decoded result...{Colors.END}")
+                            find_all([result], search_text, recursive=True, _depth=_depth+1, _max_depth=_max_depth)
+
             search_result = searcher(strings, search_text, False)
 
             if len(search_result) > 0:
@@ -144,6 +157,11 @@ def find_all(strings, search_text: str):
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
+                    if recursive and _depth < _max_depth:
+                        if result and result != plain_strings:
+                            print(f"  {Colors.CYAN}[recursive depth={_depth+1}] Searching inside decoded result...{Colors.END}")
+                            find_all([result], search_text, recursive=True, _depth=_depth+1, _max_depth=_max_depth)
+
         else:
             search_result = searcher(strings, search_text)
             if len(search_result) > 0:
@@ -157,3 +175,8 @@ def find_all(strings, search_text: str):
                     result = decoder_functions[(i)//2](text_cut)
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
+
+                    if recursive and _depth < _max_depth:
+                        if result and result != plain_strings:
+                            print(f"  {Colors.CYAN}[recursive depth={_depth+1}] Searching inside decoded result...{Colors.END}")
+                            find_all([result], search_text, recursive=True, _depth=_depth+1, _max_depth=_max_depth)
