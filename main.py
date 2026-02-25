@@ -131,12 +131,12 @@ def encode_base85(data):
     
     return result
 
-def encode_base92(text):
+def encode_base92(data):
     ALPHABET = "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
                "[]^_`abcdefghijklmnopqrstuvwxyz{|}~"
     if isinstance(data, str): data = data.encode('utf-8')
     
-    val = int.from_bytes(text.encode('utf-8'), 'big')
+    val = int.from_bytes(data.encode('utf-8'), 'big')
     res = []
     
     while val > 0:
@@ -144,6 +144,15 @@ def encode_base92(text):
         res.append(ALPHABET[rem])
         
     return "".join(reversed(res)) if res else ALPHABET[0]
+
+def encode_hex(data):
+    result = ""
+
+    for letter in data:
+        int_letter = ord(letter)
+        result += hex(int_letter)[2:]
+
+    return result
 
 # === searchers ===
 
@@ -261,4 +270,18 @@ def base92_reverse_search(text: list[str], search: str):
 
     return search[::-1] in text
 
-print(encode_base64("test"))
+# --- hex
+
+def hex_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_hex(search)
+
+    return search in text
+
+def hex_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_hex(search)
+
+    return search[::-1] in text
+
+print(encode_hex("test"))
