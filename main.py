@@ -206,6 +206,7 @@ def url_reverse_search(text: list[str], search: str):
 strings = core.get_strings("example.png")
 
 # print(encode_atbash("pico"))
+print(strings)
 print(default_reverse_search(strings, "uuu"))
 
 # === finder ===
