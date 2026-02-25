@@ -154,7 +154,7 @@ def encode_hex(data: str) -> str:
 
     return result
 
-def rot(data: str, offset: int) -> str:
+def encode_rot(data: str, offset: int) -> str:
     ALPHABET = "abcdefghijklmnopqrstuvwxyz"
     ALPHABET_UPPER = ALPHABET.upper()
 
@@ -297,5 +297,20 @@ def hex_reverse_search(text: list[str], search: str):
     search = encode_hex(search)
 
     return search[::-1] in text
+
+# --- rot
+
+def rot_search(text: list[str], search: str, offset: int):
+    text = "".join(text)
+    search = encode_rot(search, offset)
+
+    return search in text
+
+def rot_search(text: list[str], search: str, offset: int):
+    text = "".join(text)
+    search = encode_rot(search, offset)
+
+    return search[::-1] in text
+
 
 print(encode_hex("test"))
