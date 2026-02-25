@@ -182,6 +182,50 @@ def enncode_binary(data: str, spaces: bool) -> str:
 
     return result
 
+def encode_morse(data: str) -> str:
+    MORSE_CODE_DICT = {
+        'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 'F': '..-.',
+        'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 'K': '-.-', 'L': '.-..',
+        'M': '--', 'N': '-.', 'O': '---', 'P': '.--.', 'Q': '--.-', 'R': '.-.',
+        'S': '...', 'T': '-', 'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-',
+        'Y': '-.--', 'Z': '--..',
+        '1': '.----', '2': '..--', '3': '...--', '4': '....-', '5': '.....',
+        '6': '-....', '7': '--...', '8': '---..', '9': '----.', '0': '-----',
+        '.': '.-.-.-', ',': '--..--', '?': '..--..', '/': '-..-.', '-': '-....-',
+        '(': '-.--.', ')': '-.--.-'
+    }
+
+    result = ""
+
+    for letter in data:
+        if letter.upper() in list(MORSE_CODE_DICT.keys()):
+            result += MORSE_CODE_DICT[letter.upper()]
+        else:
+            result += letter
+
+        result += " "
+
+    result = result[:-1]
+
+    return result
+
+def encode_atbash(data: str) -> str:
+    ALPHABET = "abcdefghijklmnopqrstuvwxyz"
+    ALPHABET_UPPER = ALPHABET.UPPER()
+
+    result = ""
+
+    for letter in data:
+        if letter in ALPHABET:
+            result += ALPHABET[ALPHABET.find(letter) - len(ALPHABET)//2]
+        elif letter in ALPHABET_UPPER:
+            result += ALPHABET_UPPER[ALPHABET_UPPER.find(letter) - len(ALPHABET_UPPER)//2]
+        else:
+            result += letter
+
+    return result
+
+
 # === searchers ===
 
 # --- default
@@ -340,5 +384,19 @@ def binary_reverse_search(text: list[str], search: str, spaces: bool):
 
     return search[::-1] in text
 
+# --- morse
 
-print(enncode_binary("pico", True))
+def morse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_morse(search)
+
+    return search in text
+
+def morse_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_morse(search)
+
+    return search[::-1] in text
+
+
+print(encode_morse("pico"))
