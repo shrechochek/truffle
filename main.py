@@ -169,7 +169,7 @@ def encode_rot(data: str, offset: int) -> str:
 
     return result
 
-def enncode_binary(data: str, spaces: bool) -> str:
+def encode_binary(data: str, spaces: bool) -> str:
     result = ""
 
     for letter in data:
@@ -224,6 +224,18 @@ def encode_atbash(data: str) -> str:
         else:
             result += letter
 
+    return result
+
+def encode_url(data: str) -> str:
+    SAFE_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~"
+    
+    result = ""
+    for char in data:
+        if char in SAFE_CHARS:
+            result += char
+        else:
+            result += f"%{ord(char):02X}"
+            
     return result
 
 # === searchers ===
@@ -374,13 +386,13 @@ def rot_reverse_search(text: list[str], search: str, offset: int):
 
 def binary_search(text: list[str], search: str, spaces: bool):
     text = "".join(text)
-    search = enncode_binary(search, spaces)
+    search = encode_binary(search, spaces)
 
     return search in text
 
 def binary_reverse_search(text: list[str], search: str, spaces: bool):
     text = "".join(text)
-    search = enncode_binary(search, spaces)
+    search = encode_binary(search, spaces)
 
     return search[::-1] in text
 
@@ -412,5 +424,18 @@ def atbash_reverse_search(text: list[str], search: str):
 
     return search[::-1] in text
 
+# --- url
+
+def url_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_url(search)
+
+    return search in text
+
+def url_reverse_search(text: list[str], search: str):
+    text = "".join(text)
+    search = encode_url(search)
+
+    return search[::-1] in text
 
 print(encode_atbash("pico"))
