@@ -67,6 +67,18 @@ def get_strings(file_path, min_len=4):
             
     return result
 
+def get_vertical_strings(text: list[str]):
+    rows = []
+    for j in range(len(max(text, key=len))):
+        curr_row = ""
+        for i in range(len(text)):
+            if len(text[i]) > j:
+                curr_row += text[i][j]
+
+        rows.append(curr_row)
+
+    return rows
+
 def find_all_indices(text: str, substring: str) -> str:
     indices = []
     start = 0
@@ -99,10 +111,8 @@ def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = T
     plain_strings = "".join(strings)
     
     if max_depth == 1:
-        # Оригинальная логика для глубины 1
         _find_depth_one(plain_strings, strings, search_text, enable_rot)
     else:
-        # Рекурсивный поиск для глубины > 1
         _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot)
 
 
@@ -157,7 +167,6 @@ def _find_depth_one(plain_strings: str, strings: list[str], search_text: str, en
 
 
 def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool):
-    """Рекурсивный поиск с заданной глубиной"""
     print(f"{Colors.CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
     
     # generating all possible chains of combinations
