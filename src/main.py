@@ -1,15 +1,22 @@
 import sys
+import argparse
 import core
 
-sys_arguments = sys.argv[1:]
-if len(sys_arguments) != 2:
-    print(f"{core.Colors.BRIGHT_RED}incorrect number of arguments{core.Colors.END}")
+parser = argparse.ArgumentParser(description='TRUFFLE - Multi-encoding search tool')
+parser.add_argument('file', help='File to search in')
+parser.add_argument('search', help='Text to search for')
+parser.add_argument('-i', '--iterations', type=int, default=1, 
+                    help='Depth of recursive decoding (default: 1)')
+parser.add_argument('-r', '--no-rot', action='store_true',
+                    help='Disable ROT cipher search')
+
+args = parser.parse_args()
+
+if args.iterations < 1:
+    print(f"{core.Colors.BRIGHT_RED}iterations must be >= 1{core.Colors.END}")
     sys.exit(1)
 
-file_name = sys_arguments[0]
-strings = core.get_strings(file_name)
-
-search_text = sys_arguments[1]
+strings = core.get_strings(args.file)
 
 print(core.pig_art)
-core.find_all(strings, search_text)
+core.find_all(strings, args.search, args.iterations, not args.no_rot)
