@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 import core
 
@@ -21,7 +22,14 @@ vertical_strings = core.get_vertical_strings(strings)
 
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Started!{core.Colors.END}")
 
-print(core.pig_art)
+columns = os.get_terminal_size().columns
+
+if columns >= 84:
+    print(core.main_text_and_pig_art)
+elif columns >= 53:
+    print(core.main_text)
+elif columns >= 32:
+    print(core.pig_art)
 
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*14} Default Search... {'='*15}{core.Colors.END}")
