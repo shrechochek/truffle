@@ -31,14 +31,19 @@ elif columns >= 53:
 elif columns >= 32:
     print(core.pig_art)
 
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*14} Default Search... {'='*15}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}\n")
+search_text = " Default Search... "
+spaces_len = (columns-len(search_text))//2
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len} Default Search... {'='*(spaces_len+(columns-len(search_text))%2)}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
 core.find_all(strings, args.search, args.iterations, args.rot)
 
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*14} Vertical Search... {'='*14}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}\n")
+
+vertical_search_text = " Vertical Search... "
+spaces_len = (columns-len(vertical_search_text))//2
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len}{vertical_search_text}{'='*(spaces_len+(columns-len(vertical_search_text))%2)}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
 core.find_all(vertical_strings, args.search, args.iterations, args.rot)
 
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Finished!{core.Colors.END}")
