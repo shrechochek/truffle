@@ -1,5 +1,6 @@
 # truffle
 > automatic flag search program for CTF
+> work like grep but support a lot of encode algorits 
 
 ---
 
@@ -8,6 +9,19 @@
 git clone https://github.com/shrechochek/truffle
 cd truffle
 ```
+
+### Adding to paths (not required but highly recomended)
+```shell
+echo $SHELL # this will show you your shell
+nano ~/.bashrc # or ~/.zshrc
+```
+
+then add to the end of file this 
+```shell
+alias truffle='python3 /full/path/to/main.py'
+```
+
+now you can run this project by typing `truffle` in your terminal
 
 ## Usage
 ```shell
@@ -19,37 +33,28 @@ python src/main.py FILE_NAME TEXT_TO_SEARCH [-i DEPTH] [-r]
 - `TEXT_TO_SEARCH` - text to search for
 - `-i, --iterations DEPTH` - depth of recursive decoding (default: 1)
 - `-r, --no-rot` - enable ROT cipher search
+- '-d' - recursive directory search
 
 ### Examples
 
 Basic search (depth 1):
 ```shell
 python src/main.py example.txt flag{
-
-Found results for base64_search
-index: 16
-fdsfsadfdsffflag{hello_test}fdfdasfdsfaffdasffieu
 ```
 
-Recursive search with depth 2 (finds text encoded twice):
+Recursive directory search (depth 3):
 ```shell
-python src/main.py file.txt secret -i 2
-
-Searching with depth 2... This may take a while.
-
-Found results for chain: base58 → base64
-Original text: HbLESKAYodh
-secret
+python src/main.py . flag{ -d -i 3
 ```
 
-Recursive search with depth 3, ROT disabled:
+Recursive file search with depth 2 (finds text encoded twice):
 ```shell
-python src/main.py file.txt flag -i 3 -r
+python src/main.py file.txt flag{ -i 2
+```
 
-Searching with depth 3... This may take a while.
-
-Found results for chain: base64 → base64_reverse → no_decode
-Original text: PT13TXlFRGR6Vkdk
+Recursive file search with depth 3, ROT enabled:
+```shell
+python src/main.py file.txt flag{ -i 3 -r
 ```
 
 ## Supported Encodings

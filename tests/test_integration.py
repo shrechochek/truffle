@@ -234,5 +234,38 @@ class TestIntegrationMultipleMatches(unittest.TestCase):
         self.assertTrue(result.stdout.count('Found') >= 2)
 
 
+class TestIntegrationDeepSearch(unittest.TestCase):
+    """Integration tests for deep recursive directory search"""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_deep_search_finds_nested_file(self):
+        """Deep mode should search recursively in nested directories"""
+        nested_dir = os.path.join(self.temp_dir.name, 'level1', 'level2')
+        os.makedirs(nested_dir)
+
+        encoded = encoders.encode_base64('flag{nested}')
+        target_file = os.path.join(nested_dir, 'payload.txt')
+        with open(target_file, 'w') as f:
+            f.write(f'Data: {encoded}')
+
+        with open(os.path.join(self.temp_dir.name, 'ignore.txt'), 'w') as f:
+            f.write('nothing to see here')
+
+        result = subprocess.run(
+            ['python', 'src/main.py', self.temp_dir.name, 'flag', '-i', '1', '-d'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        self.assertIn('Found', result.stdout)
+        self.assertIn('payload.txt', result.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -161,20 +161,22 @@ decoder_functions = [decoders.no_decode,     decoders.decode_base64, decoders.de
                      decoders.decode_atbash, decoders.decode_url]
 
 
-def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False):
+def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None):
     if not strings:
-        return
+        return 0
 
     plain_strings = "".join(strings)
     
     if max_depth == 1:
-        _find_depth_one(plain_strings, search_text, enable_rot)
-    else:
-        _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot)
+        return _find_depth_one(plain_strings, search_text, enable_rot, source_label)
+
+    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label)
 
 
-def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
+def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, source_label: str | None = None):
     """Оригинальная логика поиска на глубине 1"""
+    match_count = 0
+
     for i in range(len(searcher_functions)):
         searcher = searcher_functions[i]
         
@@ -185,6 +187,9 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
             for j in range(1, 26):
                 search_result = searcher(plain_strings, search_text, j)
                 if len(search_result) > 0:
+                    match_count += len(search_result)
+                    if source_label:
+                        print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
                     print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}offset = {str(j)}{Colors.END}")
                     for index in search_result:
                         print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
@@ -199,6 +204,9 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
             for spaces in [True, False]:
                 search_result = searcher(plain_strings, search_text, spaces)
                 if len(search_result) > 0:
+                    match_count += len(search_result)
+                    if source_label:
+                        print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
                     print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}spaces = {spaces}{Colors.END}")
                     for index in search_result:
                         print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
@@ -212,6 +220,9 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
         else:
             search_result = searcher(plain_strings, search_text)
             if len(search_result) > 0:
+                match_count += len(search_result)
+                if source_label:
+                    print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
                 print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END}")
                 for index in search_result:
                     print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
@@ -222,8 +233,10 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
                     search_text_position = result.find(search_text)
                     print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
+    return match_count
 
-def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool):
+
+def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None):
     print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
     base_decoders = _get_base_decoders(enable_rot)
@@ -231,7 +244,9 @@ def _find_recursive(plain_strings: str, strings: list[str], search_text: str, ma
     found_results = set()  # remove duplicates
 
     for encoded_text in potential_encoded:
-        _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results)
+        _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results, source_label)
+
+    return len(found_results)
 
 
 def _get_base_decoders(enable_rot: bool):
@@ -266,7 +281,7 @@ def _collect_potential_encoded(strings: list[str], plain_strings: str):
     return potential_encoded
 
 
-def _walk_decoder_chains(original_text: str, current_text: str, search_text: str, base_decoders, depth_left: int, chain_names: list[str], found_results: set):
+def _walk_decoder_chains(original_text: str, current_text: str, search_text: str, base_decoders, depth_left: int, chain_names: list[str], found_results: set, source_label: str | None = None):
     if depth_left == 0:
         if search_text in current_text:
             chain_str = " → ".join(chain_names)
@@ -278,7 +293,7 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
                     'chain_str': chain_str,
                     'decoded': current_text,
                     # 'original': original_text,
-                }, search_text)
+                }, search_text, source_label)
         return
 
     for name, decoder_func, param, is_reverse in base_decoders:
@@ -299,7 +314,7 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
             continue
 
         chain_names.append(name)
-        _walk_decoder_chains(original_text, candidate, search_text, base_decoders, depth_left - 1, chain_names, found_results)
+        _walk_decoder_chains(original_text, candidate, search_text, base_decoders, depth_left - 1, chain_names, found_results, source_label)
         chain_names.pop()
 
 
@@ -351,7 +366,9 @@ def _can_be_encoding(text: str, encoding_name: str) -> bool:
         return True
     
     return True
-def _print_result(result, search_text):
+def _print_result(result, search_text, source_label: str | None = None):
+    if source_label:
+        print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
     print(f"Found results for chain: {Colors.BRIGHT_YELLOW}{result['chain_str']}{Colors.END}")
     # print(f"{Colors.BLUE}Original text: {result['original'][:80]}{'...' if len(result['original']) > 80 else ''}{Colors.END}")
     print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
