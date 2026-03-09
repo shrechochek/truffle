@@ -3,7 +3,7 @@
 > work like grep but support a lot of encode algorits 
 
 [![GitHub release](https://img.shields.io/github/v/release/shrechochek/truffle?style=for-the-badge&color=ff69b4&logo=github)](https://github.com/shrechochek/truffle/releases)
-[![GitHub release](https://img.shields.io/github/license/shrechochek/truffle?style=for-the-badge&color=25b342&logo=github)]
+![GitHub release](https://img.shields.io/github/license/shrechochek/truffle?style=for-the-badge&color=25b342&logo=github)
 
 ---
 
