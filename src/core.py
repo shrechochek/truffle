@@ -63,7 +63,11 @@ class Colors:
     END = '\033[0m'
     
     BOLD = '\033[1m'
+    ITALIC = '\033[3m'
     UNDERLINE = '\033[4m'
+    STRIKETHROUGH = '\033[9m'
+    REVERSE = '\033[7m'
+    INVISIBLE = '\033[8m'
     
     BLACK = '\033[30m'
     RED = '\033[31m'
@@ -160,46 +164,46 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
             for j in range(1, 26):
                 search_result = searcher(plain_strings, search_text, j)
                 if len(search_result) > 0:
-                    print(f"Found results for {Colors.YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}offset = {str(j)}{Colors.END}")
+                    print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}offset = {str(j)}{Colors.END}")
                     for index in search_result:
-                        print(f"{Colors.GREEN}index: {index}{Colors.END}")
+                        print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
                         text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
                         if i % 2 == 1:
                             text_cut = text_cut[::-1]
                         result = decoders.decode_rot(text_cut, j)
                         search_text_position = result.find(search_text)
-                        print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
+                        print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
         elif searcher == searchers.binary_search or searcher == searchers.binary_reverse_search:
             for spaces in [True, False]:
                 search_result = searcher(plain_strings, search_text, spaces)
                 if len(search_result) > 0:
-                    print(f"Found results for {Colors.YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}spaces = {spaces}{Colors.END}")
+                    print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}spaces = {spaces}{Colors.END}")
                     for index in search_result:
-                        print(f"{Colors.GREEN}index: {index}{Colors.END}")
+                        print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
                         text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
                         if i % 2 == 1:
                             text_cut = text_cut[::-1]
                         result = decoder_functions[(i)//2](text_cut)
                         search_text_position = result.find(search_text)
-                        print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
+                        print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
         else:
             search_result = searcher(plain_strings, search_text)
             if len(search_result) > 0:
-                print(f"Found results for {Colors.YELLOW}{str(searcher.__name__)}{Colors.END}")
+                print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END}")
                 for index in search_result:
-                    print(f"{Colors.GREEN}index: {index}{Colors.END}")
+                    print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
                     text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
                     if i % 2 == 1:
                         text_cut = text_cut[::-1]
                     result = decoder_functions[(i)//2](text_cut)
                     search_text_position = result.find(search_text)
-                    print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
+                    print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
 
 def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool):
-    print(f"{Colors.CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
+    print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
     base_decoders = _get_base_decoders(enable_rot)
     potential_encoded = _collect_potential_encoded(strings, plain_strings)
@@ -249,9 +253,10 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
             if result_key not in found_results:
                 found_results.add(result_key)
                 _print_result({
+                    'index': original_text.find(current_text),
                     'chain_str': chain_str,
                     'decoded': current_text,
-                    'original': original_text,
+                    # 'original': original_text,
                 }, search_text)
         return
 
@@ -326,8 +331,9 @@ def _can_be_encoding(text: str, encoding_name: str) -> bool:
     
     return True
 def _print_result(result, search_text):
-    print(f"Found results for chain: {Colors.YELLOW}{result['chain_str']}{Colors.END}")
-    print(f"{Colors.BLUE}Original text: {result['original'][:80]}{'...' if len(result['original']) > 80 else ''}{Colors.END}")
+    print(f"Found results for chain: {Colors.BRIGHT_YELLOW}{result['chain_str']}{Colors.END}")
+    # print(f"{Colors.BLUE}Original text: {result['original'][:80]}{'...' if len(result['original']) > 80 else ''}{Colors.END}")
+    print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
     
     decoded = result['decoded']
     search_text_position = decoded.find(search_text)
@@ -337,5 +343,5 @@ def _print_result(result, search_text):
     context = decoded[context_start:context_end]
     
     highlight_pos = search_text_position - context_start
-    print(f"{context[:highlight_pos]}{Colors.RED}{search_text}{Colors.END}{context[highlight_pos+len(search_text):]}")
+    print(f"{context[:highlight_pos]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{context[highlight_pos+len(search_text):]}")
     print()

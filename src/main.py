@@ -19,18 +19,18 @@ if args.iterations < 1:
 strings = core.get_strings(args.file)
 vertical_strings = core.get_vertical_strings(strings)
 
-print(f"{core.Colors.BRIGHT_GREEN}Started!{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Started!{core.Colors.END}")
 
 print(core.pig_art)
 
-print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}")
-print(f"{core.Colors.MAGENTA}{'='*14} Default Search... {'='*15}{core.Colors.END}")
-print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}\n")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*14} Default Search... {'='*15}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}\n")
 core.find_all(strings, args.search, args.iterations, args.rot)
 
-print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}")
-print(f"{core.Colors.MAGENTA}{'='*14} Vertical Search... {'='*14}{core.Colors.END}")
-print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}\n")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*14} Vertical Search... {'='*14}{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*48}{core.Colors.END}\n")
 core.find_all(vertical_strings, args.search, args.iterations, args.rot)
 
-print(f"{core.Colors.BRIGHT_GREEN}Finished!{core.Colors.END}")
+print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Finished!{core.Colors.END}")
