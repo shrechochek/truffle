@@ -2,7 +2,7 @@
 > automatic flag search program for CTF <br>
 > work like grep but support a lot of encode algorits 
 
-![GitHub release (latest by date)](https://img.shields.io)
+[![GitHub release](https://img.shields.io/github/v/release/shrechochek/truffle?style=for-the-badge&color=ff69b4&logo=github)](https://github.com/shrechochek/truffle/releases)
 
 ---
 
