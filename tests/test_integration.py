@@ -71,7 +71,7 @@ class TestIntegrationDepth2(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'hello', '-i', '2', '-r'],
+            ['python', 'src/main.py', self.temp_file.name, 'hello', '-i', '2'],
             capture_output=True,
             text=True,
             timeout=30
@@ -89,7 +89,7 @@ class TestIntegrationDepth2(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'test', '-i', '2', '-r'],
+            ['python', 'src/main.py', self.temp_file.name, 'test', '-i', '2'],
             capture_output=True,
             text=True,
             timeout=30
@@ -98,8 +98,8 @@ class TestIntegrationDepth2(unittest.TestCase):
         self.assertIn('Found', result.stdout)
 
 
-class TestIntegrationNoRot(unittest.TestCase):
-    """Tests for -r flag (disable ROT)"""
+class TestIntegrationRotFlag(unittest.TestCase):
+    """Tests for -r flag (enable ROT)"""
     
     def setUp(self):
         self.temp_file = tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt')
@@ -116,13 +116,13 @@ class TestIntegrationNoRot(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '2', '-r'],
+            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '2'],
             capture_output=True,
             text=True,
             timeout=30
         )
         
-        # With -r flag should not find through ROT
+        self.assertNotIn('Found', result.stdout)
         self.assertNotIn('rot', result.stdout.lower())
     
     def test_rot_enabled(self):
@@ -134,7 +134,7 @@ class TestIntegrationNoRot(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '2'],
+            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '2', '-r'],
             capture_output=True,
             text=True,
             timeout=60
@@ -161,7 +161,7 @@ class TestIntegrationSpecialCases(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'SOS', '-i', '2', '-r'],
+            ['python', 'src/main.py', self.temp_file.name, 'SOS', '-i', '2'],
             capture_output=True,
             text=True,
             timeout=30
@@ -179,7 +179,7 @@ class TestIntegrationSpecialCases(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'hello', '-i', '2', '-r'],
+            ['python', 'src/main.py', self.temp_file.name, 'hello', '-i', '2'],
             capture_output=True,
             text=True,
             timeout=30
@@ -196,7 +196,7 @@ class TestIntegrationSpecialCases(unittest.TestCase):
         self.temp_file.close()
         
         result = subprocess.run(
-            ['python', 'src/main.py', self.temp_file.name, 'hi', '-i', '2', '-r'],
+            ['python', 'src/main.py', self.temp_file.name, 'hi', '-i', '2'],
             capture_output=True,
             text=True,
             timeout=30

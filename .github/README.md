@@ -18,7 +18,7 @@ python src/main.py FILE_NAME TEXT_TO_SEARCH [-i DEPTH] [-r]
 - `FILE_NAME` - file to search in
 - `TEXT_TO_SEARCH` - text to search for
 - `-i, --iterations DEPTH` - depth of recursive decoding (default: 1)
-- `-r, --no-rot` - disable ROT cipher search
+- `-r, --no-rot` - enable ROT cipher search
 
 ### Examples
 

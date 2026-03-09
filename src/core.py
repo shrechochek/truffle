@@ -2,6 +2,9 @@ import decoders
 import encoders
 import searchers
 import sys
+import re
+from functools import lru_cache
+from itertools import zip_longest
 
 pig_art = r'''
                                                                   ⣀⣤⣤⣶⣶⣶⣶⣦⣤⣄⣀           
@@ -14,6 +17,47 @@ pig_art = r'''
                                                              ⢻⣿⣿  ⢸⣿⡇     ⢻⣿⠃⠸⣿⡇      
                                                              ⠈⠿⠇   ⠻⠇     ⠈⠿  ⠻⠿
 '''
+
+PRINTABLE_ASCII_PATTERN = re.compile(rb'[\x20-\x7e]{4,}')
+POTENTIAL_ENCODED_PATTERN = re.compile(r'[A-Za-z0-9+/=\-_.~%:$#@!*]+')
+
+MORSE_CHARS = frozenset('.-')
+BINARY_CHARS = frozenset('01 ')
+HEX_CHARS = frozenset('0123456789ABCDEFabcdef')
+BASE64_CHARS = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+BASE32_CHARS = frozenset('ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=')
+BASE45_CHARS = frozenset('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:')
+BASE58_FORBIDDEN = frozenset('0OIl')
+BASE85_SPECIAL_CHARS = frozenset('.-:+=^!/*?&<>()[]{}@%$#')
+BASE92_SPECIAL_CHARS = frozenset("!#$%&'()*+,-./:;<=>?@[]^_`{|}~")
+
+BASE_DECODERS = [
+    ('no_decode', decoders.no_decode, None, False),
+    ('base64', decoders.decode_base64, None, False),
+    ('base64_reverse', decoders.decode_base64, None, True),
+    ('base58', decoders.decode_base58, None, False),
+    ('base58_reverse', decoders.decode_base58, None, True),
+    ('base32', decoders.decode_base32, None, False),
+    ('base32_reverse', decoders.decode_base32, None, True),
+    ('base45', decoders.decode_base45, None, False),
+    ('base45_reverse', decoders.decode_base45, None, True),
+    ('base62', decoders.decode_base62, None, False),
+    ('base62_reverse', decoders.decode_base62, None, True),
+    ('base85', decoders.decode_base85, None, False),
+    ('base85_reverse', decoders.decode_base85, None, True),
+    ('base92', decoders.decode_base92, None, False),
+    ('base92_reverse', decoders.decode_base92, None, True),
+    ('hex', decoders.decode_hex, None, False),
+    ('hex_reverse', decoders.decode_hex, None, True),
+    ('binary', decoders.decode_binary, None, False),
+    ('binary_reverse', decoders.decode_binary, None, True),
+    ('morse', decoders.decode_morse, None, False),
+    ('morse_reverse', decoders.decode_morse, None, True),
+    ('atbash', decoders.decode_atbash, None, False),
+    ('atbash_reverse', decoders.decode_atbash, None, True),
+    ('url', decoders.decode_url, None, False),
+    ('url_reverse', decoders.decode_url, None, True),
+]
 
 class Colors:
     END = '\033[0m'
@@ -49,35 +93,20 @@ class Colors:
 def get_strings(file_path, min_len=4):
     with open(file_path, "rb") as f:
         content = f.read()
-    printable_bytes = set(range(32, 127)) 
-    
-    result = []
-    current_str = bytearray()
-    
-    for byte in content:
-        if byte in printable_bytes:
-            current_str.append(byte)
-        else:
-            if len(current_str) >= min_len:
-                result.append(current_str.decode('ascii', errors='ignore'))
-            current_str = bytearray()
 
-    if len(current_str) >= min_len:
-        result.append(current_str.decode('ascii', errors='ignore'))
-            
-    return result
+    if min_len <= 4:
+        matches = PRINTABLE_ASCII_PATTERN.findall(content)
+    else:
+        pattern = rb'[\x20-\x7e]{' + str(min_len).encode('ascii') + rb',}'
+        matches = re.findall(pattern, content)
+
+    return [match.decode('ascii') for match in matches]
 
 def get_vertical_strings(text: list[str]):
-    rows = []
-    for j in range(len(max(text, key=len))):
-        curr_row = ""
-        for i in range(len(text)):
-            if len(text[i]) > j:
-                curr_row += text[i][j]
+    if not text:
+        return []
 
-        rows.append(curr_row)
-
-    return rows
+    return ["".join(column) for column in zip_longest(*text, fillvalue="")]
 
 def find_all_indices(text: str, substring: str) -> str:
     indices = []
@@ -95,28 +124,31 @@ def find_all_indices(text: str, substring: str) -> str:
     return indices
 
 searcher_functions = [searchers.default_search, searchers.default_reverse_search, searchers.base64_search, searchers.base64_reverse_search, searchers.base58_search, searchers.base58_reverse_search,
-             searchers.base32_search,  searchers.base32_reverse_search,  searchers.base45_search, searchers.base45_reverse_search, searchers.base62_search, searchers.base62_reverse_search,
-             searchers.base85_search,  searchers.base85_reverse_search,  searchers.base92_search, searchers.base92_reverse_search, searchers.hex_search,    searchers.hex_reverse_search,
-             searchers.rot_search,     searchers.rot_reverse_search,     searchers.binary_search, searchers.binary_reverse_search, searchers.morse_search,  searchers.morse_reverse_search,
-             searchers.atbash_search,  searchers.atbash_reverse_search,  searchers.url_search,    searchers.url_reverse_search]
+                      searchers.base32_search,  searchers.base32_reverse_search,  searchers.base45_search, searchers.base45_reverse_search, searchers.base62_search, searchers.base62_reverse_search,
+                      searchers.base85_search,  searchers.base85_reverse_search,  searchers.base92_search, searchers.base92_reverse_search, searchers.hex_search,    searchers.hex_reverse_search,
+                      searchers.rot_search,     searchers.rot_reverse_search,     searchers.binary_search, searchers.binary_reverse_search, searchers.morse_search,  searchers.morse_reverse_search,
+                      searchers.atbash_search,  searchers.atbash_reverse_search,  searchers.url_search,    searchers.url_reverse_search]
 
-decoder_functions = [decoders.no_decode,    decoders.decode_base64, decoders.decode_base58,
+decoder_functions = [decoders.no_decode,     decoders.decode_base64, decoders.decode_base58,
                      decoders.decode_base32, decoders.decode_base45, decoders.decode_base62,
                      decoders.decode_base85, decoders.decode_base92, decoders.decode_hex,
                      decoders.decode_rot,    decoders.decode_binary, decoders.decode_morse,
                      decoders.decode_atbash, decoders.decode_url]
 
 
-def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = True):
+def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False):
+    if not strings:
+        return
+
     plain_strings = "".join(strings)
     
     if max_depth == 1:
-        _find_depth_one(plain_strings, strings, search_text, enable_rot)
+        _find_depth_one(plain_strings, search_text, enable_rot)
     else:
         _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot)
 
 
-def _find_depth_one(plain_strings: str, strings: list[str], search_text: str, enable_rot: bool):
+def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool):
     """Оригинальная логика поиска на глубине 1"""
     for i in range(len(searcher_functions)):
         searcher = searcher_functions[i]
@@ -126,7 +158,7 @@ def _find_depth_one(plain_strings: str, strings: list[str], search_text: str, en
                 continue
                 
             for j in range(1, 26):
-                search_result = searcher(strings, search_text, j)
+                search_result = searcher(plain_strings, search_text, j)
                 if len(search_result) > 0:
                     print(f"Found results for {Colors.YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}offset = {str(j)}{Colors.END}")
                     for index in search_result:
@@ -140,7 +172,7 @@ def _find_depth_one(plain_strings: str, strings: list[str], search_text: str, en
 
         elif searcher == searchers.binary_search or searcher == searchers.binary_reverse_search:
             for spaces in [True, False]:
-                search_result = searcher(strings, search_text, spaces)
+                search_result = searcher(plain_strings, search_text, spaces)
                 if len(search_result) > 0:
                     print(f"Found results for {Colors.YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}spaces = {spaces}{Colors.END}")
                     for index in search_result:
@@ -153,7 +185,7 @@ def _find_depth_one(plain_strings: str, strings: list[str], search_text: str, en
                         print(f"{result[:search_text_position]}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
         else:
-            search_result = searcher(strings, search_text)
+            search_result = searcher(plain_strings, search_text)
             if len(search_result) > 0:
                 print(f"Found results for {Colors.YELLOW}{str(searcher.__name__)}{Colors.END}")
                 for index in search_result:
@@ -168,133 +200,120 @@ def _find_depth_one(plain_strings: str, strings: list[str], search_text: str, en
 
 def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool):
     print(f"{Colors.CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
-    
-    # generating all possible chains of combinations
-    chains = _generate_decoder_chains(max_depth, enable_rot)
-    
-    import re
-    potential_encoded = []
-    
-    for string in strings:
-        matches = re.findall(r'[A-Za-z0-9+/=\-_.~%:$#@!*]+', string)
-        potential_encoded.extend(matches)
-        potential_encoded.append(string.strip())
-    
-    for i in range(0, len(plain_strings), 30):
-        potential_encoded.append(plain_strings[i:min(i+150, len(plain_strings))])
-    
-    potential_encoded = list(set([s.strip() for s in potential_encoded if len(s.strip()) >= 4]))
-    
+
+    base_decoders = _get_base_decoders(enable_rot)
+    potential_encoded = _collect_potential_encoded(strings, plain_strings)
     found_results = set()  # remove duplicates
-    
+
     for encoded_text in potential_encoded:
-        for chain in chains:
-            result = _try_decode_chain(encoded_text, search_text, chain)
-            if result:
-                result_key = (result['chain_str'], result['decoded'][:100])
-                if result_key not in found_results:
-                    found_results.add(result_key)
-                    _print_result(result, search_text)
+        _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results)
 
 
-def _generate_decoder_chains(depth: int, enable_rot: bool):
-    # genearte all possible chaings
-    base_decoders = [
-        ('no_decode', decoders.no_decode, None, False),
-        ('base64', decoders.decode_base64, None, False),
-        ('base64_reverse', decoders.decode_base64, None, True),
-        ('base58', decoders.decode_base58, None, False),
-        ('base58_reverse', decoders.decode_base58, None, True),
-        ('base32', decoders.decode_base32, None, False),
-        ('base32_reverse', decoders.decode_base32, None, True),
-        ('base45', decoders.decode_base45, None, False),
-        ('base45_reverse', decoders.decode_base45, None, True),
-        ('base62', decoders.decode_base62, None, False),
-        ('base62_reverse', decoders.decode_base62, None, True),
-        ('base85', decoders.decode_base85, None, False),
-        ('base85_reverse', decoders.decode_base85, None, True),
-        ('base92', decoders.decode_base92, None, False),
-        ('base92_reverse', decoders.decode_base92, None, True),
-        ('hex', decoders.decode_hex, None, False),
-        ('hex_reverse', decoders.decode_hex, None, True),
-        ('binary', decoders.decode_binary, None, False),
-        ('binary_reverse', decoders.decode_binary, None, True),
-        ('morse', decoders.decode_morse, None, False),
-        ('morse_reverse', decoders.decode_morse, None, True),
-        ('atbash', decoders.decode_atbash, None, False),
-        ('atbash_reverse', decoders.decode_atbash, None, True),
-        ('url', decoders.decode_url, None, False),
-        ('url_reverse', decoders.decode_url, None, True),
-    ]
-    
-    # rot
+def _get_base_decoders(enable_rot: bool):
+    base_decoders = list(BASE_DECODERS)
+
     if enable_rot:
         for offset in range(1, 26):
             base_decoders.append((f'rot{offset}', decoders.decode_rot, offset, False))
             base_decoders.append((f'rot{offset}_reverse', decoders.decode_rot, offset, True))
-    
-    if depth == 1:
-        return [[decoder] for decoder in base_decoders]
-    
-    chains = []
-    
-    def generate(current_chain, remaining_depth):
-        if remaining_depth == 0:
-            chains.append(current_chain[:])
-            return
-        
-        for decoder in base_decoders:
-            current_chain.append(decoder)
-            generate(current_chain, remaining_depth - 1)
-            current_chain.pop()
-    
-    generate([], depth)
-    return chains
+
+    return base_decoders
 
 
+def _collect_potential_encoded(strings: list[str], plain_strings: str):
+    potential_encoded = set()
+
+    for string in strings:
+        stripped = string.strip()
+        if len(stripped) >= 4:
+            potential_encoded.add(stripped)
+
+        for match in POTENTIAL_ENCODED_PATTERN.findall(string):
+            stripped_match = match.strip()
+            if len(stripped_match) >= 4:
+                potential_encoded.add(stripped_match)
+
+    for i in range(0, len(plain_strings), 30):
+        chunk = plain_strings[i:min(i + 150, len(plain_strings))].strip()
+        if len(chunk) >= 4:
+            potential_encoded.add(chunk)
+
+    return potential_encoded
+
+
+def _walk_decoder_chains(original_text: str, current_text: str, search_text: str, base_decoders, depth_left: int, chain_names: list[str], found_results: set):
+    if depth_left == 0:
+        if search_text in current_text:
+            chain_str = " → ".join(chain_names)
+            result_key = (chain_str, current_text[:100])
+            if result_key not in found_results:
+                found_results.add(result_key)
+                _print_result({
+                    'chain_str': chain_str,
+                    'decoded': current_text,
+                    'original': original_text,
+                }, search_text)
+        return
+
+    for name, decoder_func, param, is_reverse in base_decoders:
+        if not _can_be_encoding(current_text, name):
+            continue
+
+        candidate = current_text[::-1] if is_reverse else current_text
+
+        try:
+            if param is not None:
+                candidate = decoder_func(candidate, param)
+            else:
+                candidate = decoder_func(candidate)
+        except Exception:
+            continue
+
+        if not candidate:
+            continue
+
+        chain_names.append(name)
+        _walk_decoder_chains(original_text, candidate, search_text, base_decoders, depth_left - 1, chain_names, found_results)
+        chain_names.pop()
+
+
+@lru_cache(maxsize=16384)
 def _can_be_encoding(text: str, encoding_name: str) -> bool:
     if not text:
         return False
     
     if 'url' in encoding_name.lower():
-        return '%' in text and any(c in '0123456789ABCDEFabcdef' for c in text)
+        return '%' in text and any(c in HEX_CHARS for c in text)
     
     if 'morse' in encoding_name.lower():
-        morse_chars = set('.-')
-        return any(c in morse_chars for c in text) and not any(c.isalnum() for c in text.replace(' ', ''))
+        return any(c in MORSE_CHARS for c in text) and not any(c.isalnum() for c in text.replace(' ', ''))
     
     if 'binary' in encoding_name.lower():
-        binary_chars = set('01 ')
-        return len(text) >= 8 and all(c in binary_chars for c in text)
+        return len(text) >= 8 and all(c in BINARY_CHARS for c in text)
     
     if 'hex' in encoding_name.lower():
-        hex_chars = set('0123456789ABCDEFabcdef')
-        return len(text) >= 2 and all(c in hex_chars for c in text)
+        return len(text) >= 2 and all(c in HEX_CHARS for c in text)
     
     if 'base64' in encoding_name.lower():
-        base64_chars = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
-        return len(text) >= 4 and all(c in base64_chars for c in text)
+        return len(text) >= 4 and all(c in BASE64_CHARS for c in text)
     
     if 'base58' in encoding_name.lower():
-        forbidden = set('0OIl')
-        return not any(c in forbidden for c in text) and text.isalnum()
+        return not any(c in BASE58_FORBIDDEN for c in text) and text.isalnum()
     
     if 'base32' in encoding_name.lower():
-        base32_chars = set('ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=')
-        return len(text) >= 4 and all(c in base32_chars for c in text.upper())
+        return len(text) >= 4 and all(c in BASE32_CHARS for c in text.upper())
     
     if 'base45' in encoding_name.lower():
-        base45_chars = set('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:')
-        return all(c in base45_chars for c in text.upper())
+        return all(c in BASE45_CHARS for c in text.upper())
     
     if 'base62' in encoding_name.lower():
         return text.isalnum() and len(text) >= 4
     
     if 'base85' in encoding_name.lower():
-        return len(text) >= 5 and any(c in '.-:+=^!/*?&<>()[]{}@%$#' for c in text)
+        return len(text) >= 5 and any(c in BASE85_SPECIAL_CHARS for c in text)
     
     if 'base92' in encoding_name.lower():
-        return len(text) >= 4 and any(c in '!#$%&\'()*+,-./:;<=>?@[]^_`{|}~' for c in text)
+        return len(text) >= 4 and any(c in BASE92_SPECIAL_CHARS for c in text)
     
     if 'rot' in encoding_name.lower():
         return any(c.isalpha() for c in text)
@@ -306,42 +325,6 @@ def _can_be_encoding(text: str, encoding_name: str) -> bool:
         return True
     
     return True
-
-
-def _try_decode_chain(text: str, search_text: str, chain):
-    decoded = text
-    chain_names = []
-    
-    for name, decoder_func, param, is_reverse in chain:
-        if not _can_be_encoding(decoded, name):
-            return None
-        
-        if is_reverse:
-            decoded = decoded[::-1]
-        
-        try:
-            if param is not None:
-                decoded = decoder_func(decoded, param)
-            else:
-                decoded = decoder_func(decoded)
-        except Exception:
-            return None
-        
-        chain_names.append(name)
-        
-        if not decoded or len(decoded) == 0:
-            return None
-    
-    if search_text in decoded:
-        return {
-            'chain_str': " → ".join(chain_names),
-            'decoded': decoded,
-            'original': text
-        }
-    
-    return None
-
-
 def _print_result(result, search_text):
     print(f"Found results for chain: {Colors.YELLOW}{result['chain_str']}{Colors.END}")
     print(f"{Colors.BLUE}Original text: {result['original'][:80]}{'...' if len(result['original']) > 80 else ''}{Colors.END}")

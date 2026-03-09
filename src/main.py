@@ -7,8 +7,8 @@ parser.add_argument('file', help='File to search in')
 parser.add_argument('search', help='Text to search for')
 parser.add_argument('-i', '--iterations', type=int, default=1, 
                     help='Depth of recursive decoding (default: 1)')
-parser.add_argument('-r', '--no-rot', action='store_true',
-                    help='Disable ROT cipher search')
+parser.add_argument('-r', '--rot', action='store_true',
+                    help='Enable ROT cipher search')
 
 args = parser.parse_args()
 
@@ -26,11 +26,11 @@ print(core.pig_art)
 print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}")
 print(f"{core.Colors.MAGENTA}{'='*14} Default Search... {'='*15}{core.Colors.END}")
 print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}\n")
-core.find_all(strings, args.search, args.iterations, not args.no_rot)
+core.find_all(strings, args.search, args.iterations, args.rot)
 
 print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}")
 print(f"{core.Colors.MAGENTA}{'='*14} Vertical Search... {'='*14}{core.Colors.END}")
 print(f"{core.Colors.MAGENTA}{'='*48}{core.Colors.END}\n")
-core.find_all(vertical_strings, args.search, args.iterations, not args.no_rot)
+core.find_all(vertical_strings, args.search, args.iterations, args.rot)
 
 print(f"{core.Colors.BRIGHT_GREEN}Finished!{core.Colors.END}")
