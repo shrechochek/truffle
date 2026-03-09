@@ -1,6 +1,8 @@
 # truffle
-> automatic flag search program for CTF
+> automatic flag search program for CTF <br>
 > work like grep but support a lot of encode algorits 
+
+![GitHub release (latest by date)](https://img.shields.io)
 
 ---
 
