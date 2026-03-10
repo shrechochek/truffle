@@ -45,6 +45,7 @@ TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 24))
 STATUS_COLS = TERMINAL_SIZE.columns
 STATUS_ROW = TERMINAL_SIZE.lines
 STATUS_ENABLED = sys.stdout.isatty()
+ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
 
 PRINTABLE_ASCII_PATTERN = re.compile(rb'[\x20-\x7e]{4,}')
 POTENTIAL_ENCODED_PATTERN = re.compile(r'[A-Za-z0-9+/=\-_.~%:$#@!*]+')
@@ -60,7 +61,6 @@ BASE85_SPECIAL_CHARS = frozenset('.-:+=^!/*?&<>()[]{}@%$#')
 BASE92_SPECIAL_CHARS = frozenset("!#$%&'()*+,-./:;<=>?@[]^_`{|}~")
 
 BASE_DECODERS = [
-    ('no_decode', decoders.no_decode, None, False),
     ('base64', decoders.decode_base64, None, False),
     ('base64_reverse', decoders.decode_base64, None, True),
     ('base58', decoders.decode_base58, None, False),
@@ -129,7 +129,7 @@ def status(msg):
     sys.stdout.write(f"\0337")
     sys.stdout.write(f"\033[{STATUS_ROW};1H")
     sys.stdout.write("\033[2K")
-    sys.stdout.write(msg[:STATUS_COLS])
+    sys.stdout.write(_truncate_ansi_text(msg, STATUS_COLS))
     sys.stdout.write("\0338")
     sys.stdout.flush()
 
@@ -151,6 +151,29 @@ def _format_progress(label: str, current: int, total: int, extra: str = "") -> s
         message = f"{message} {extra}"
 
     return message
+
+
+def _truncate_ansi_text(text: str, max_visible_chars: int) -> str:
+    visible_chars = 0
+    position = 0
+    result = []
+
+    while position < len(text) and visible_chars < max_visible_chars:
+        escape_match = ANSI_ESCAPE_PATTERN.match(text, position)
+        if escape_match:
+            result.append(escape_match.group(0))
+            position = escape_match.end()
+            continue
+
+        result.append(text[position])
+        visible_chars += 1
+        position += 1
+
+    truncated = ''.join(result)
+    if '\033[' in truncated and not truncated.endswith(Colors.END):
+        truncated += Colors.END
+
+    return truncated
 
 def get_strings(file_path, min_len=4):
     with open(file_path, "rb") as f:
@@ -208,7 +231,7 @@ def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = F
     return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key, progress_label)
 
 def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None):
-    if max_depth > 5 or (max_depth > 2 and enable_rot is not None):
+    if max_depth > 5 or (max_depth > 2 and enable_rot):
         print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
     base_decoders = _get_base_decoders(enable_rot, xor_key)
@@ -217,7 +240,7 @@ def _find_recursive(plain_strings: str, strings: list[str], search_text: str, ma
     total_candidates = len(potential_encoded)
 
     if progress_label and total_candidates > 0:
-        status(_format_progress(progress_label, 0, total_candidates, f"hits:{len(found_results)}"))
+        status(_format_progress(progress_label, 0, total_candidates))
 
     update_interval = max(1, total_candidates // 100) if total_candidates > 0 else 1
 
@@ -225,7 +248,7 @@ def _find_recursive(plain_strings: str, strings: list[str], search_text: str, ma
         _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results, source_label)
 
         if progress_label and (index == 1 or index == total_candidates or index % update_interval == 0):
-            extra = f"hits:{len(found_results)}"
+            extra = f""
             if source_label:
                 extra = f"{os.path.basename(source_label)} {extra}"
             status(_format_progress(progress_label, index, total_candidates, extra))
@@ -275,20 +298,12 @@ def _collect_potential_encoded(strings: list[str], plain_strings: str):
 
 def _walk_decoder_chains(original_text: str, current_text: str, search_text: str, base_decoders, depth_left: int, chain_names: list[str], found_results: set, source_label: str | None = None):
     if depth_left == 0:
-        if search_text in current_text:
-            chain_str = " → ".join(chain_names)
-            result_key = (chain_str, current_text[:100])
-            if result_key not in found_results:
-                found_results.add(result_key)
-                _print_result({
-                    # 'index': original_text.index(current_text),
-                    'chain_str': chain_str,
-                    'decoded': current_text,
-                    # 'original': original_text,
-                }, search_text, source_label)
         return
 
     for name, decoder_func, param, is_reverse in base_decoders:
+        if _should_skip_decoder(chain_names, name, param, is_reverse):
+            continue
+
         if not _can_be_encoding(current_text, name):
             continue
 
@@ -306,8 +321,82 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
             continue
 
         chain_names.append(name)
+
+        if search_text in candidate:
+            chain_str = " → ".join(chain_names)
+            result_key = (chain_str, candidate[:100])
+            if result_key not in found_results:
+                found_results.add(result_key)
+                _print_result({
+                    'chain_str': chain_str,
+                    'decoded': candidate,
+                }, search_text, source_label)
+
         _walk_decoder_chains(original_text, candidate, search_text, base_decoders, depth_left - 1, chain_names, found_results, source_label)
         chain_names.pop()
+
+
+def _get_decoder_family(name: str) -> str:
+    if name.startswith('rot'):
+        return 'rot'
+
+    if name.startswith('xor('):
+        return 'xor'
+
+    if name.startswith('atbash'):
+        return 'atbash'
+
+    if name == 'no_decode':
+        return 'identity'
+
+    if name.endswith('_reverse'):
+        return name[:-8]
+
+    return name
+
+
+@lru_cache(maxsize=64)
+def _is_single_byte_xor_key(key: str | None) -> bool:
+    if key is None:
+        return False
+
+    if key.lower().startswith('0x'):
+        try:
+            return 0 <= int(key, 16) <= 0xFF
+        except ValueError:
+            return False
+
+    return len(key.encode('utf-8')) == 1
+
+
+def _should_skip_decoder(chain_names: list[str], name: str, param, is_reverse: bool) -> bool:
+    if not chain_names:
+        return False
+
+    previous_name = chain_names[-1]
+    previous_family = _get_decoder_family(previous_name)
+    current_family = _get_decoder_family(name)
+
+    if previous_family == 'rot' and current_family == 'rot':
+        return True
+
+    if previous_family == 'atbash' and current_family == 'atbash':
+        return True
+
+    if previous_family == 'identity' and current_family == 'identity':
+        return True
+
+    if previous_family == 'xor' and current_family == 'xor':
+        previous_is_reverse = previous_name.endswith('_reverse')
+        previous_base_name = previous_name[:-8] if previous_is_reverse else previous_name
+        previous_key = previous_base_name[4:-1] if previous_base_name.startswith('xor(') else None
+        if previous_key == param and not previous_is_reverse and not is_reverse:
+            return True
+
+        if previous_key == param and _is_single_byte_xor_key(param):
+            return True
+
+    return False
 
 
 @lru_cache(maxsize=16384)
