@@ -264,5 +264,21 @@ class TestCanBeEncoding(unittest.TestCase):
         self.assertTrue(core._can_be_encoding("anything", "xor(-)"))
 
 
+class TestDecoderOptimization(unittest.TestCase):
+    """Tests for pruning redundant decoder chains"""
+
+    def test_skips_consecutive_rot(self):
+        self.assertTrue(core._should_skip_decoder(['rot13'], 'rot5', 5, False))
+
+    def test_skips_consecutive_atbash(self):
+        self.assertTrue(core._should_skip_decoder(['atbash_reverse'], 'atbash', None, False))
+
+    def test_skips_same_xor_key_twice(self):
+        self.assertTrue(core._should_skip_decoder(['xor(-)'], 'xor(-)', '-', False))
+
+    def test_keeps_distinct_decoders(self):
+        self.assertFalse(core._should_skip_decoder(['base64'], 'hex', None, False))
+
+
 if __name__ == '__main__':
     unittest.main()
