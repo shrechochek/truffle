@@ -27,8 +27,15 @@ alias truffle='python3 /full/path/to/main.py'
 now you can run this project by typing `truffle` in your terminal
 
 ## Usage
+
+### file search
 ```shell
-python src/main.py FILE_NAME TEXT_TO_SEARCH [-i DEPTH] [-r]
+python src/main.py FILE_NAME TEXT_TO_SEARCH [-i DEPTH] [-r] [-d] [-x KEY]
+```
+
+### recursive directory search 
+```shell
+python src/main.py FOLDER_NAME TEXT_TO_SEARCH [-i DEPTH] [-r] [-d] [-x KEY]
 ```
 
 ### Arguments
@@ -36,7 +43,8 @@ python src/main.py FILE_NAME TEXT_TO_SEARCH [-i DEPTH] [-r]
 - `TEXT_TO_SEARCH` - text to search for
 - `-i, --iterations DEPTH` - depth of recursive decoding (default: 1)
 - `-r, --no-rot` - enable ROT cipher search
-- '-d' - recursive directory search
+- `-d` - recursive directory search
+- `-x KEY` - enable xor search with key
 
 ### Examples
 
