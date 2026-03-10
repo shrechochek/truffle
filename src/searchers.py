@@ -136,3 +136,11 @@ def url_search(text: list[str], search: str):
 
 def url_reverse_search(text: list[str], search: str):
     return _encoded_search(text, search, encoders.encode_url, True)
+
+# --- xor
+
+def xor_search(text: list[str], search: str, key: int | str):
+    return _encoded_search(text, search, encoders.encode_xor, False, False, False, key)
+
+def xor_reverse_search(text: list[str], search: str, key: int | str):
+    return _encoded_search(text, search, encoders.encode_xor, True, False, False, key)

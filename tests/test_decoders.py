@@ -162,5 +162,16 @@ class TestNoDecoder(unittest.TestCase):
         self.assertEqual(decoders.no_decode(text), text)
 
 
+class TestXorDecoder(unittest.TestCase):
+    def test_single_char_key(self):
+        decoded = decoders.decode_xor("YH^Y", "-")
+        self.assertEqual(decoded, "test")
+
+    def test_hex_key_roundtrip(self):
+        encoded = encoders.encode_xor("flag", "0x2d")
+        decoded = decoders.decode_xor(encoded, "0x2d")
+        self.assertEqual(decoded, "flag")
+
+
 if __name__ == '__main__':
     unittest.main()

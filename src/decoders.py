@@ -206,5 +206,9 @@ def decode_url(data: str) -> str:
     except UnicodeDecodeError:
         return ""
 
+
+def decode_xor(data: str, key: int | str) -> str:
+    return encoders.encode_xor(data, key)
+
 def no_decode(data: str) -> str:
     return data

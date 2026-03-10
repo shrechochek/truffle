@@ -1,5 +1,22 @@
 # === encoders ===
 
+def _xor_bytes(data: bytes, key: int | str) -> bytes:
+    if isinstance(key, str):
+        if key.lower().startswith("0x"):
+            key_int = int(key, 16)
+            return bytes(byte ^ key_int for byte in data)
+
+        key_bytes = key.encode('utf-8')
+        if not key_bytes:
+            raise ValueError("XOR key must not be empty")
+
+        return bytes(
+            data[i] ^ key_bytes[i % len(key_bytes)]
+            for i in range(len(data))
+        )
+
+    return bytes(byte ^ key for byte in data)
+
 def encode_base58(data: str) -> str:
     ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
     
@@ -211,3 +228,9 @@ def encode_url(data: str) -> str:
             result += f"%{ord(char):02X}"
             
     return result
+
+
+def encode_xor(data: str, key: int | str) -> str:
+    data_bytes = data.encode('utf-8')
+    result_bytes = _xor_bytes(data_bytes, key)
+    return result_bytes.decode('utf-8', errors='replace')

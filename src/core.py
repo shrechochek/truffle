@@ -152,28 +152,29 @@ searcher_functions = [searchers.default_search, searchers.default_reverse_search
                       searchers.base32_search,  searchers.base32_reverse_search,  searchers.base45_search, searchers.base45_reverse_search, searchers.base62_search, searchers.base62_reverse_search,
                       searchers.base85_search,  searchers.base85_reverse_search,  searchers.base92_search, searchers.base92_reverse_search, searchers.hex_search,    searchers.hex_reverse_search,
                       searchers.rot_search,     searchers.rot_reverse_search,     searchers.binary_search, searchers.binary_reverse_search, searchers.morse_search,  searchers.morse_reverse_search,
-                      searchers.atbash_search,  searchers.atbash_reverse_search,  searchers.url_search,    searchers.url_reverse_search]
+                      searchers.atbash_search,  searchers.atbash_reverse_search,  searchers.url_search,    searchers.url_reverse_search,
+                      searchers.xor_search,     searchers.xor_reverse_search]
 
 decoder_functions = [decoders.no_decode,     decoders.decode_base64, decoders.decode_base58,
                      decoders.decode_base32, decoders.decode_base45, decoders.decode_base62,
                      decoders.decode_base85, decoders.decode_base92, decoders.decode_hex,
                      decoders.decode_rot,    decoders.decode_binary, decoders.decode_morse,
-                     decoders.decode_atbash, decoders.decode_url]
+                     decoders.decode_atbash, decoders.decode_url, decoders.decode_xor]
 
 
-def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None):
+def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None, xor_key: str | None = None):
     if not strings:
         return 0
 
     plain_strings = "".join(strings)
     
     if max_depth == 1:
-        return _find_depth_one(plain_strings, search_text, enable_rot, source_label)
+        return _find_depth_one(plain_strings, search_text, enable_rot, source_label, xor_key)
 
-    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label)
+    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key)
 
 
-def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, source_label: str | None = None):
+def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None):
     """Оригинальная логика поиска на глубине 1"""
     match_count = 0
 
@@ -192,7 +193,7 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, sour
                         print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
                     print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}offset = {str(j)}{Colors.END}")
                     for index in search_result:
-                        print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
+                        # print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
                         text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
                         if i % 2 == 1:
                             text_cut = text_cut[::-1]
@@ -209,13 +210,31 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, sour
                         print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
                     print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}spaces = {spaces}{Colors.END}")
                     for index in search_result:
-                        print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
+                        # print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
                         text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
                         if i % 2 == 1:
                             text_cut = text_cut[::-1]
                         result = decoder_functions[(i)//2](text_cut)
                         search_text_position = result.find(search_text)
                         print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
+
+        elif searcher == searchers.xor_search or searcher == searchers.xor_reverse_search:
+            if xor_key is None:
+                continue
+
+            search_result = searcher(plain_strings, search_text, xor_key)
+            if len(search_result) > 0:
+                match_count += len(search_result)
+                if source_label:
+                    print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
+                print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}key = {xor_key}{Colors.END}")
+                for index in search_result:
+                    text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
+                    if i % 2 == 1:
+                        text_cut = text_cut[::-1]
+                    result = decoders.decode_xor(text_cut, xor_key)
+                    search_text_position = result.find(search_text)
+                    print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
 
         else:
             search_result = searcher(plain_strings, search_text)
@@ -225,7 +244,7 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, sour
                     print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
                 print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END}")
                 for index in search_result:
-                    print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
+                    # print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
                     text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
                     if i % 2 == 1:
                         text_cut = text_cut[::-1]
@@ -236,10 +255,10 @@ def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, sour
     return match_count
 
 
-def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None):
+def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None):
     print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
-    base_decoders = _get_base_decoders(enable_rot)
+    base_decoders = _get_base_decoders(enable_rot, xor_key)
     potential_encoded = _collect_potential_encoded(strings, plain_strings)
     found_results = set()  # remove duplicates
 
@@ -249,13 +268,17 @@ def _find_recursive(plain_strings: str, strings: list[str], search_text: str, ma
     return len(found_results)
 
 
-def _get_base_decoders(enable_rot: bool):
+def _get_base_decoders(enable_rot: bool, xor_key: str | None = None):
     base_decoders = list(BASE_DECODERS)
 
     if enable_rot:
         for offset in range(1, 26):
             base_decoders.append((f'rot{offset}', decoders.decode_rot, offset, False))
             base_decoders.append((f'rot{offset}_reverse', decoders.decode_rot, offset, True))
+
+    if xor_key is not None:
+        base_decoders.append((f'xor({xor_key})', decoders.decode_xor, xor_key, False))
+        base_decoders.append((f'xor({xor_key})_reverse', decoders.decode_xor, xor_key, True))
 
     return base_decoders
 
@@ -289,7 +312,7 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
             if result_key not in found_results:
                 found_results.add(result_key)
                 _print_result({
-                    'index': original_text.find(current_text),
+                    # 'index': original_text.index(current_text),
                     'chain_str': chain_str,
                     'decoded': current_text,
                     # 'original': original_text,
@@ -358,6 +381,9 @@ def _can_be_encoding(text: str, encoding_name: str) -> bool:
     
     if 'rot' in encoding_name.lower():
         return any(c.isalpha() for c in text)
+
+    if 'xor' in encoding_name.lower():
+        return True
     
     if 'atbash' in encoding_name.lower():
         return any(c.isalpha() for c in text)
@@ -371,7 +397,7 @@ def _print_result(result, search_text, source_label: str | None = None):
         print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
     print(f"Found results for chain: {Colors.BRIGHT_YELLOW}{result['chain_str']}{Colors.END}")
     # print(f"{Colors.BLUE}Original text: {result['original'][:80]}{'...' if len(result['original']) > 80 else ''}{Colors.END}")
-    print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
+    # print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
     
     decoded = result['decoded']
     search_text_position = decoded.find(search_text)

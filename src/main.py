@@ -13,11 +13,17 @@ parser.add_argument('-r', '--rot', action='store_true',
                     help='Enable ROT cipher search')
 parser.add_argument('-d', '--deep', action='store_true',
                     help='Recursively search all files under the provided directory')
+parser.add_argument('-x', '--xor', dest='xor_key',
+                    help='Enable XOR search using the provided key (string or 0xNN)')
 
 args = parser.parse_args()
 
 if args.iterations < 1:
     print(f"{core.Colors.BRIGHT_RED}iterations must be >= 1{core.Colors.END}")
+    sys.exit(1)
+
+if args.xor_key == "":
+    print(f"{core.Colors.BRIGHT_RED}xor key must not be empty{core.Colors.END}")
     sys.exit(1)
 
 
@@ -57,23 +63,23 @@ def get_file_strings(file_path: str):
         return None
 
 
-def run_default_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool):
+def run_default_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None):
     strings = get_file_strings(file_path)
     if strings is None:
         return 0
 
     source_label = file_path if deep else None
-    return core.find_all(strings, search_text, iterations, enable_rot, source_label)
+    return core.find_all(strings, search_text, iterations, enable_rot, source_label, xor_key)
 
 
-def run_vertical_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool):
+def run_vertical_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None):
     strings = get_file_strings(file_path)
     if strings is None:
         return 0
 
     vertical_strings = core.get_vertical_strings(strings)
     source_label = file_path if deep else None
-    return core.find_all(vertical_strings, search_text, iterations, enable_rot, source_label)
+    return core.find_all(vertical_strings, search_text, iterations, enable_rot, source_label, xor_key)
 
 target_files = iter_target_files(args.file, args.deep)
 
@@ -94,7 +100,7 @@ print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len} Default Search... {'='*(spaces_len+(columns-len(search_text))%2)}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
 for file_path in target_files:
-    run_default_search(file_path, args.search, args.iterations, args.rot, args.deep)
+    run_default_search(file_path, args.search, args.iterations, args.rot, args.deep, args.xor_key)
 
 
 vertical_search_text = " Vertical Search... "
@@ -103,6 +109,6 @@ print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len}{vertical_search_text}{'='*(spaces_len+(columns-len(vertical_search_text))%2)}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
 for file_path in target_files:
-    run_vertical_search(file_path, args.search, args.iterations, args.rot, args.deep)
+    run_vertical_search(file_path, args.search, args.iterations, args.rot, args.deep, args.xor_key)
 
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Finished!{core.Colors.END}")

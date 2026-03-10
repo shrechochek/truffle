@@ -165,6 +165,16 @@ class TestSpecialEncodings(unittest.TestCase):
         dec2 = decoders.decode_atbash(dec1)
         self.assertEqual(dec2, text)
 
+    def test_xor_base64(self):
+        """XOR → Base64"""
+        text = "flag"
+        enc1 = encoders.encode_xor(text, "-")
+        enc2 = encoders.encode_base64(enc1)
+
+        dec1 = decoders.decode_base64(enc2)
+        dec2 = decoders.decode_xor(dec1, "-")
+        self.assertEqual(dec2, text)
+
 
 class TestAllRotOffsets(unittest.TestCase):
     """Tests for all ROT variants"""
@@ -248,6 +258,10 @@ class TestCanBeEncoding(unittest.TestCase):
         """Check Base58 detection"""
         self.assertTrue(core._can_be_encoding("3vQB7T", "base58"))
         self.assertFalse(core._can_be_encoding("0OIl", "base58"))
+
+    def test_xor_detection(self):
+        """Check XOR detection"""
+        self.assertTrue(core._can_be_encoding("anything", "xor(-)"))
 
 
 if __name__ == '__main__':

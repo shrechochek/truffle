@@ -144,5 +144,15 @@ class TestUrlEncoder(unittest.TestCase):
         self.assertEqual(result, "abc123")
 
 
+class TestXorEncoder(unittest.TestCase):
+    def test_single_char_key(self):
+        self.assertEqual(encoders.encode_xor("test", "-"), "YH^Y")
+
+    def test_hex_key_roundtrip(self):
+        encoded = encoders.encode_xor("flag", "0x2d")
+        decoded = encoders.encode_xor(encoded, "0x2d")
+        self.assertEqual(decoded, "flag")
+
+
 if __name__ == '__main__':
     unittest.main()

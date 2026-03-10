@@ -204,6 +204,41 @@ class TestIntegrationSpecialCases(unittest.TestCase):
         
         self.assertIn('Found', result.stdout)
 
+    def test_xor_encoding(self):
+        """XOR encoding"""
+        text = "flag"
+        encoded = encoders.encode_xor(text, '-')
+        self.temp_file.write(f"XOR: {encoded}")
+        self.temp_file.close()
+
+        result = subprocess.run(
+            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '1', '-x', '-'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        self.assertIn('Found', result.stdout)
+        self.assertIn('xor', result.stdout.lower())
+
+    def test_xor_base64_recursive(self):
+        """XOR via recursive search"""
+        text = "flag"
+        enc1 = encoders.encode_xor(text, '-')
+        enc2 = encoders.encode_base64(enc1)
+        self.temp_file.write(f"Data: {enc2}")
+        self.temp_file.close()
+
+        result = subprocess.run(
+            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '2', '-x', '-'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        self.assertIn('Found', result.stdout)
+        self.assertIn('xor', result.stdout.lower())
+
 
 class TestIntegrationMultipleMatches(unittest.TestCase):
     """Tests for multiple matches"""
