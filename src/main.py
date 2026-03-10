@@ -63,23 +63,30 @@ def get_file_strings(file_path: str):
         return None
 
 
-def run_default_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None):
+def build_progress_label(stage: str, file_index: int, total_files: int, deep: bool):
+    if deep:
+        return f"{stage} file {file_index}/{total_files}"
+
+    return stage
+
+
+def run_default_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None, progress_label: str):
     strings = get_file_strings(file_path)
     if strings is None:
         return 0
 
     source_label = file_path if deep else None
-    return core.find_all(strings, search_text, iterations, enable_rot, source_label, xor_key)
+    return core.find_all(strings, search_text, iterations, enable_rot, source_label, xor_key, progress_label)
 
 
-def run_vertical_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None):
+def run_vertical_search(file_path: str, search_text: str, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None, progress_label: str):
     strings = get_file_strings(file_path)
     if strings is None:
         return 0
 
     vertical_strings = core.get_vertical_strings(strings)
     source_label = file_path if deep else None
-    return core.find_all(vertical_strings, search_text, iterations, enable_rot, source_label, xor_key)
+    return core.find_all(vertical_strings, search_text, iterations, enable_rot, source_label, xor_key, progress_label)
 
 target_files = iter_target_files(args.file, args.deep)
 
@@ -99,8 +106,16 @@ spaces_len = (columns-len(search_text))//2
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len} Default Search... {'='*(spaces_len+(columns-len(search_text))%2)}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
-for file_path in target_files:
-    run_default_search(file_path, args.search, args.iterations, args.rot, args.deep, args.xor_key)
+for file_index, file_path in enumerate(target_files, start=1):
+    run_default_search(
+        file_path,
+        args.search,
+        args.iterations,
+        args.rot,
+        args.deep,
+        args.xor_key,
+        build_progress_label("Default Search:", file_index, len(target_files), args.deep),
+    )
 
 
 vertical_search_text = " Vertical Search... "
@@ -108,7 +123,17 @@ spaces_len = (columns-len(vertical_search_text))//2
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len}{vertical_search_text}{'='*(spaces_len+(columns-len(vertical_search_text))%2)}{core.Colors.END}")
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
-for file_path in target_files:
-    run_vertical_search(file_path, args.search, args.iterations, args.rot, args.deep, args.xor_key)
+for file_index, file_path in enumerate(target_files, start=1):
+    run_vertical_search(
+        file_path,
+        args.search,
+        args.iterations,
+        args.rot,
+        args.deep,
+        args.xor_key,
+        build_progress_label("Vertical Search:", file_index, len(target_files), args.deep),
+    )
+
+core.clear_status()
 
 print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Finished!{core.Colors.END}")

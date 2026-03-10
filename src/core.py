@@ -3,6 +3,7 @@ import encoders
 import searchers
 import re
 import sys
+import os
 from functools import lru_cache
 from itertools import zip_longest
 import shutil
@@ -40,7 +41,10 @@ main_text_and_pig_art = r'''
                                                         ⠈⠿⠇   ⠻⠇     ⠈⠿  ⠻⠿
 '''
 
-STATUS_ROW, cols = shutil.get_terminal_size(fallback=(80, 24))
+TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 24))
+STATUS_COLS = TERMINAL_SIZE.columns
+STATUS_ROW = TERMINAL_SIZE.lines
+STATUS_ENABLED = sys.stdout.isatty()
 
 PRINTABLE_ASCII_PATTERN = re.compile(rb'[\x20-\x7e]{4,}')
 POTENTIAL_ENCODED_PATTERN = re.compile(r'[A-Za-z0-9+/=\-_.~%:$#@!*]+')
@@ -119,12 +123,34 @@ class Colors:
     BG_WHITE = '\033[47m'
 
 def status(msg):
+    if not STATUS_ENABLED:
+        return
+
     sys.stdout.write(f"\0337")
     sys.stdout.write(f"\033[{STATUS_ROW};1H")
     sys.stdout.write("\033[2K")
-    sys.stdout.write(msg[:cols])
+    sys.stdout.write(msg[:STATUS_COLS])
     sys.stdout.write("\0338")
     sys.stdout.flush()
+
+
+def clear_status():
+    status("")
+
+
+def _format_progress(label: str, current: int, total: int, extra: str = "") -> str:
+    total = max(total, 1)
+    current = min(max(current, 0), total)
+    percent = current / total
+    bar_width = max(10, min(30, STATUS_COLS // 3))
+    filled = int(bar_width * percent)
+    bar = Colors.BG_GREEN + " " * filled + Colors.END + Colors.BG_RED + " " * (bar_width - filled) + Colors.END
+    message = f"{Colors.CYAN}{label}{Colors.END} {bar} {Colors.GREEN}{current}{Colors.END}/{total} {percent * 100:5.1f}%"
+
+    if extra:
+        message = f"{message} {extra}"
+
+    return message
 
 def get_strings(file_path, min_len=4):
     with open(file_path, "rb") as f:
@@ -173,24 +199,40 @@ decoder_functions = [decoders.no_decode,     decoders.decode_base64, decoders.de
                      decoders.decode_atbash, decoders.decode_url, decoders.decode_xor]
 
 
-def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None, xor_key: str | None = None):
+def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None):
     if not strings:
         return 0
 
     plain_strings = "".join(strings)
 
-    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key)
+    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key, progress_label)
 
-def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None):
+def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None):
     if max_depth > 5 or (max_depth > 2 and enable_rot is not None):
         print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
     base_decoders = _get_base_decoders(enable_rot, xor_key)
     potential_encoded = _collect_potential_encoded(strings, plain_strings)
     found_results = set()  # remove duplicates
+    total_candidates = len(potential_encoded)
 
-    for encoded_text in potential_encoded:
+    if progress_label and total_candidates > 0:
+        status(_format_progress(progress_label, 0, total_candidates, f"hits:{len(found_results)}"))
+
+    update_interval = max(1, total_candidates // 100) if total_candidates > 0 else 1
+
+    for index, encoded_text in enumerate(potential_encoded, start=1):
         _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results, source_label)
+
+        if progress_label and (index == 1 or index == total_candidates or index % update_interval == 0):
+            extra = f"hits:{len(found_results)}"
+            if source_label:
+                extra = f"{os.path.basename(source_label)} {extra}"
+            status(_format_progress(progress_label, index, total_candidates, extra))
+
+    if progress_label and total_candidates == 0:
+        extra = f"{os.path.basename(source_label)} no-candidates" if source_label else "no-candidates"
+        status(_format_progress(progress_label, 1, 1, extra))
 
     return len(found_results)
 
