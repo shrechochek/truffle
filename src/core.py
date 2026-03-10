@@ -2,9 +2,10 @@ import decoders
 import encoders
 import searchers
 import re
-import os
+import sys
 from functools import lru_cache
 from itertools import zip_longest
+import shutil
 
 pig_art = r'''
           ⣀⣤⣤⣶⣶⣶⣶⣦⣤⣄⣀           
@@ -38,6 +39,8 @@ main_text_and_pig_art = r'''
                                                         ⢻⣿⣿  ⢸⣿⡇     ⢻⣿⠃⠸⣿⡇      
                                                         ⠈⠿⠇   ⠻⠇     ⠈⠿  ⠻⠿
 '''
+
+STATUS_ROW, cols = shutil.get_terminal_size(fallback=(80, 24))
 
 PRINTABLE_ASCII_PATTERN = re.compile(rb'[\x20-\x7e]{4,}')
 POTENTIAL_ENCODED_PATTERN = re.compile(r'[A-Za-z0-9+/=\-_.~%:$#@!*]+')
@@ -115,6 +118,14 @@ class Colors:
     BG_CYAN = '\033[46m'
     BG_WHITE = '\033[47m'
 
+def status(msg):
+    sys.stdout.write(f"\0337")
+    sys.stdout.write(f"\033[{STATUS_ROW};1H")
+    sys.stdout.write("\033[2K")
+    sys.stdout.write(msg[:cols])
+    sys.stdout.write("\0338")
+    sys.stdout.flush()
+
 def get_strings(file_path, min_len=4):
     with open(file_path, "rb") as f:
         content = f.read()
@@ -167,96 +178,12 @@ def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = F
         return 0
 
     plain_strings = "".join(strings)
-    
-    if max_depth == 1:
-        return _find_depth_one(plain_strings, search_text, enable_rot, source_label, xor_key)
 
     return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key)
 
-
-def _find_depth_one(plain_strings: str, search_text: str, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None):
-    """Оригинальная логика поиска на глубине 1"""
-    match_count = 0
-
-    for i in range(len(searcher_functions)):
-        searcher = searcher_functions[i]
-        
-        if searcher == searchers.rot_search or searcher == searchers.rot_reverse_search:
-            if not enable_rot:
-                continue
-                
-            for j in range(1, 26):
-                search_result = searcher(plain_strings, search_text, j)
-                if len(search_result) > 0:
-                    match_count += len(search_result)
-                    if source_label:
-                        print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
-                    print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}offset = {str(j)}{Colors.END}")
-                    for index in search_result:
-                        # print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
-                        text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
-                        if i % 2 == 1:
-                            text_cut = text_cut[::-1]
-                        result = decoders.decode_rot(text_cut, j)
-                        search_text_position = result.find(search_text)
-                        print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
-
-        elif searcher == searchers.binary_search or searcher == searchers.binary_reverse_search:
-            for spaces in [True, False]:
-                search_result = searcher(plain_strings, search_text, spaces)
-                if len(search_result) > 0:
-                    match_count += len(search_result)
-                    if source_label:
-                        print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
-                    print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}spaces = {spaces}{Colors.END}")
-                    for index in search_result:
-                        # print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
-                        text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
-                        if i % 2 == 1:
-                            text_cut = text_cut[::-1]
-                        result = decoder_functions[(i)//2](text_cut)
-                        search_text_position = result.find(search_text)
-                        print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
-
-        elif searcher == searchers.xor_search or searcher == searchers.xor_reverse_search:
-            if xor_key is None:
-                continue
-
-            search_result = searcher(plain_strings, search_text, xor_key)
-            if len(search_result) > 0:
-                match_count += len(search_result)
-                if source_label:
-                    print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
-                print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END} {Colors.BLUE}key = {xor_key}{Colors.END}")
-                for index in search_result:
-                    text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
-                    if i % 2 == 1:
-                        text_cut = text_cut[::-1]
-                    result = decoders.decode_xor(text_cut, xor_key)
-                    search_text_position = result.find(search_text)
-                    print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
-
-        else:
-            search_result = searcher(plain_strings, search_text)
-            if len(search_result) > 0:
-                match_count += len(search_result)
-                if source_label:
-                    print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
-                print(f"Found results for {Colors.BRIGHT_YELLOW}{str(searcher.__name__)}{Colors.END}")
-                for index in search_result:
-                    # print(f"{Colors.BRIGHT_GREEN}index: {index}{Colors.END}")
-                    text_cut = plain_strings[max(0, index-50):min(len(plain_strings), index+50)]
-                    if i % 2 == 1:
-                        text_cut = text_cut[::-1]
-                    result = decoder_functions[(i)//2](text_cut)
-                    search_text_position = result.find(search_text)
-                    print(f"{result[:search_text_position]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{result[search_text_position+len(search_text):]}")
-
-    return match_count
-
-
 def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None):
-    print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
+    if max_depth > 5 or (max_depth > 2 and enable_rot is not None):
+        print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
     base_decoders = _get_base_decoders(enable_rot, xor_key)
     potential_encoded = _collect_potential_encoded(strings, plain_strings)
@@ -392,6 +319,7 @@ def _can_be_encoding(text: str, encoding_name: str) -> bool:
         return True
     
     return True
+
 def _print_result(result, search_text, source_label: str | None = None):
     if source_label:
         print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
