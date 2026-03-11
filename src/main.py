@@ -75,6 +75,17 @@ def build_progress_label(stage: str, file_index: int, total_files: int, deep: bo
     return stage
 
 
+def print_stage_banner(title: str, columns: int):
+    core.clear_status()
+    banner_text = f" {title} "
+    spaces_len = (columns - len(banner_text)) // 2
+    print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * columns}{core.Colors.END}")
+    print(
+        f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * spaces_len}{banner_text}{'=' * (spaces_len + (columns - len(banner_text)) % 2)}{core.Colors.END}"
+    )
+    print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * columns}{core.Colors.END}\n")
+
+
 def run_default_search(file_path: str, search_text: str | None, iterations: int, enable_rot: bool, deep: bool, xor_key: str | None, progress_label: str, blind_mode: bool):
     strings = get_file_strings(file_path)
     if strings is None:
@@ -106,11 +117,7 @@ elif columns >= 53:
 elif columns >= 32:
     print(core.pig_art)
 
-search_text = " Default Search... "
-spaces_len = (columns-len(search_text))//2
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len} Default Search... {'='*(spaces_len+(columns-len(search_text))%2)}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
+print_stage_banner("Default Search...", columns)
 for file_index, file_path in enumerate(target_files, start=1):
     run_default_search(
         file_path,
@@ -122,13 +129,7 @@ for file_index, file_path in enumerate(target_files, start=1):
         build_progress_label("Default Search:", file_index, len(target_files), args.deep),
         args.blind,
     )
-
-
-vertical_search_text = " Vertical Search... "
-spaces_len = (columns-len(vertical_search_text))//2
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*spaces_len}{vertical_search_text}{'='*(spaces_len+(columns-len(vertical_search_text))%2)}{core.Colors.END}")
-print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'='*columns}{core.Colors.END}\n")
+print_stage_banner("Vertical Search...", columns)
 for file_index, file_path in enumerate(target_files, start=1):
     run_vertical_search(
         file_path,
