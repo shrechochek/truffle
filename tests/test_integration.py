@@ -52,6 +52,51 @@ class TestIntegrationDepth1(unittest.TestCase):
         
         self.assertIn('Found', result.stdout)
 
+    def test_plain_text_search(self):
+        """Search in plain text"""
+        self.temp_file.write("prefix flag suffix")
+        self.temp_file.close()
+
+        result = subprocess.run(
+            ['python', 'src/main.py', self.temp_file.name, 'flag', '-i', '1'],
+            capture_output=True,
+            text=True
+        )
+
+        self.assertIn('Found', result.stdout)
+        self.assertIn('no_decode', result.stdout)
+
+    def test_vertical_plain_text_search(self):
+        """Search in vertically aligned plain text"""
+        self.temp_file.write("ф какой-то текст\n")
+        self.temp_file.write("л какой\n")
+        self.temp_file.write("а бла бла бла\n")
+        self.temp_file.write("г тавыфаф\n")
+        self.temp_file.close()
+
+        result = subprocess.run(
+            ['python', 'src/main.py', self.temp_file.name, 'флаг', '-i', '1'],
+            capture_output=True,
+            text=True
+        )
+
+        self.assertIn('Found', result.stdout)
+        self.assertIn('флаг', result.stdout)
+
+    def test_blind_search(self):
+        """Blind search should find brace-wrapped text without explicit query"""
+        self.temp_file.write("noise {some text} suffix")
+        self.temp_file.close()
+
+        result = subprocess.run(
+            ['python', 'src/main.py', self.temp_file.name, '-i', '1', '-b'],
+            capture_output=True,
+            text=True
+        )
+
+        self.assertIn('Found', result.stdout)
+        self.assertIn('{some text}', result.stdout)
+
 
 class TestIntegrationDepth2(unittest.TestCase):
     """Integration tests for depth 2"""
