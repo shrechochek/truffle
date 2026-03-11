@@ -45,6 +45,7 @@ python src/main.py FOLDER_NAME TEXT_TO_SEARCH [-i DEPTH] [-r] [-d] [-x KEY]
 - `-r, --no-rot` - enable ROT cipher search
 - `-d` - recursive directory search
 - `-x KEY` - enable xor search with key
+- `-b` - to search all `{...}` patterns
 
 ### Examples
 
@@ -68,6 +69,11 @@ Recursive file search with depth 3, ROT enabled:
 python src/main.py file.txt flag{ -i 3 -r
 ```
 
+blind file search with depth 1:
+```shell
+python src/main.py file.txt -b
+```
+
 ## Supported Encodings
 - Base64, Base58, Base32, Base45, Base62, Base85, Base92
 - Hexadecimal
@@ -77,6 +83,7 @@ python src/main.py file.txt flag{ -i 3 -r
 - Atbash cipher
 - URL encoding
 - Reverse (for all encodings)
+- XOR
 
 > [!WARNING]
 > Higher depths exponentially increase search time. Depth 3 without ROT = ~1,000 combinations. With ROT enabled = ~50,000+ combinations.

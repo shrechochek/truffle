@@ -46,6 +46,8 @@ STATUS_COLS = TERMINAL_SIZE.columns
 STATUS_ROW = TERMINAL_SIZE.lines
 STATUS_ENABLED = sys.stdout.isatty()
 ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-?]*[ -/]*[@-~]')
+BLIND_FLAG_PATTERN = re.compile(r'\{[^{}\r\n]+\}')
+STATUS_VISIBLE = False
 
 PRINTABLE_ASCII_PATTERN = re.compile(rb'[\x20-\x7e]{4,}')
 POTENTIAL_ENCODED_PATTERN = re.compile(r'[A-Za-z0-9+/=\-_.~%:$#@!*]+')
@@ -85,6 +87,8 @@ BASE_DECODERS = [
     ('atbash_reverse', decoders.decode_atbash, None, True),
     ('url', decoders.decode_url, None, False),
     ('url_reverse', decoders.decode_url, None, True),
+    ('no_decode', decoders.no_decode, None, False),
+    ('no_decode_reverse', decoders.no_decode, None, True),
 ]
 
 class Colors:
@@ -126,16 +130,26 @@ def status(msg):
     if not STATUS_ENABLED:
         return
 
-    sys.stdout.write(f"\0337")
-    sys.stdout.write(f"\033[{STATUS_ROW};1H")
-    sys.stdout.write("\033[2K")
-    sys.stdout.write(_truncate_ansi_text(msg, STATUS_COLS))
-    sys.stdout.write("\0338")
+    global STATUS_VISIBLE
+
+    sys.stdout.write("\r\033[2K")
+    sys.stdout.write(_truncate_ansi_text(msg, max(1, STATUS_COLS - 1)))
     sys.stdout.flush()
+    STATUS_VISIBLE = True
 
 
 def clear_status():
-    status("")
+    if not STATUS_ENABLED:
+        return
+
+    global STATUS_VISIBLE
+
+    if not STATUS_VISIBLE:
+        return
+
+    sys.stdout.write("\r\033[2K")
+    sys.stdout.flush()
+    STATUS_VISIBLE = False
 
 
 def _format_progress(label: str, current: int, total: int, extra: str = "") -> str:
@@ -179,13 +193,23 @@ def get_strings(file_path, min_len=4):
     with open(file_path, "rb") as f:
         content = f.read()
 
-    if min_len <= 4:
-        matches = PRINTABLE_ASCII_PATTERN.findall(content)
-    else:
-        pattern = rb'[\x20-\x7e]{' + str(min_len).encode('ascii') + rb',}'
-        matches = re.findall(pattern, content)
+    decoded_content = content.decode('utf-8', errors='ignore')
+    result = []
+    current_chars = []
 
-    return [match.decode('ascii') for match in matches]
+    for char in decoded_content:
+        if char.isprintable():
+            current_chars.append(char)
+            continue
+
+        if len(current_chars) >= min_len:
+            result.append(''.join(current_chars))
+        current_chars = []
+
+    if len(current_chars) >= min_len:
+        result.append(''.join(current_chars))
+
+    return result
 
 def get_vertical_strings(text: list[str]):
     if not text:
@@ -222,16 +246,17 @@ decoder_functions = [decoders.no_decode,     decoders.decode_base64, decoders.de
                      decoders.decode_atbash, decoders.decode_url, decoders.decode_xor]
 
 
-def find_all(strings, search_text: str, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None):
+def find_all(strings, search_text: str | None, max_depth: int = 1, enable_rot: bool = False, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None, blind_mode: bool = False):
     if not strings:
         return 0
 
     plain_strings = "".join(strings)
 
-    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key, progress_label)
+    return _find_recursive(plain_strings, strings, search_text, max_depth, enable_rot, source_label, xor_key, progress_label, blind_mode)
 
-def _find_recursive(plain_strings: str, strings: list[str], search_text: str, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None):
+def _find_recursive(plain_strings: str, strings: list[str], search_text: str | None, max_depth: int, enable_rot: bool, source_label: str | None = None, xor_key: str | None = None, progress_label: str | None = None, blind_mode: bool = False):
     if max_depth > 5 or (max_depth > 2 and enable_rot):
+        clear_status()
         print(f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n")
 
     base_decoders = _get_base_decoders(enable_rot, xor_key)
@@ -245,7 +270,7 @@ def _find_recursive(plain_strings: str, strings: list[str], search_text: str, ma
     update_interval = max(1, total_candidates // 100) if total_candidates > 0 else 1
 
     for index, encoded_text in enumerate(potential_encoded, start=1):
-        _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results, source_label)
+        _walk_decoder_chains(encoded_text, encoded_text, search_text, base_decoders, max_depth, [], found_results, source_label, blind_mode)
 
         if progress_label and (index == 1 or index == total_candidates or index % update_interval == 0):
             extra = f""
@@ -296,7 +321,7 @@ def _collect_potential_encoded(strings: list[str], plain_strings: str):
     return potential_encoded
 
 
-def _walk_decoder_chains(original_text: str, current_text: str, search_text: str, base_decoders, depth_left: int, chain_names: list[str], found_results: set, source_label: str | None = None):
+def _walk_decoder_chains(original_text: str, current_text: str, search_text: str | None, base_decoders, depth_left: int, chain_names: list[str], found_results: set, source_label: str | None = None, blind_mode: bool = False):
     if depth_left == 0:
         return
 
@@ -322,7 +347,8 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
 
         chain_names.append(name)
 
-        if search_text in candidate:
+        match_text = _find_match_text(candidate, search_text, blind_mode)
+        if match_text is not None:
             chain_str = " → ".join(chain_names)
             result_key = (chain_str, candidate[:100])
             if result_key not in found_results:
@@ -330,13 +356,29 @@ def _walk_decoder_chains(original_text: str, current_text: str, search_text: str
                 _print_result({
                     'chain_str': chain_str,
                     'decoded': candidate,
-                }, search_text, source_label)
+                    'match_text': match_text,
+                }, source_label)
 
-        _walk_decoder_chains(original_text, candidate, search_text, base_decoders, depth_left - 1, chain_names, found_results, source_label)
+        _walk_decoder_chains(original_text, candidate, search_text, base_decoders, depth_left - 1, chain_names, found_results, source_label, blind_mode)
         chain_names.pop()
 
 
+def _find_match_text(text: str, search_text: str | None, blind_mode: bool) -> str | None:
+    if search_text and search_text in text:
+        return search_text
+
+    if blind_mode:
+        match = BLIND_FLAG_PATTERN.search(text)
+        if match:
+            return match.group(0)
+
+    return None
+
+
 def _get_decoder_family(name: str) -> str:
+    if name.startswith('no_decode'):
+        return 'identity'
+
     if name.startswith('rot'):
         return 'rot'
 
@@ -345,9 +387,6 @@ def _get_decoder_family(name: str) -> str:
 
     if name.startswith('atbash'):
         return 'atbash'
-
-    if name == 'no_decode':
-        return 'identity'
 
     if name.endswith('_reverse'):
         return name[:-8]
@@ -451,7 +490,9 @@ def _can_be_encoding(text: str, encoding_name: str) -> bool:
     
     return True
 
-def _print_result(result, search_text, source_label: str | None = None):
+def _print_result(result, source_label: str | None = None):
+    clear_status()
+
     if source_label:
         print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
     print(f"Found results for chain: {Colors.BRIGHT_YELLOW}{result['chain_str']}{Colors.END}")
@@ -459,12 +500,13 @@ def _print_result(result, search_text, source_label: str | None = None):
     # print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
     
     decoded = result['decoded']
-    search_text_position = decoded.find(search_text)
+    match_text = result['match_text']
+    search_text_position = decoded.find(match_text)
     
     context_start = max(0, search_text_position - 50)
-    context_end = min(len(decoded), search_text_position + len(search_text) + 50)
+    context_end = min(len(decoded), search_text_position + len(match_text) + 50)
     context = decoded[context_start:context_end]
     
     highlight_pos = search_text_position - context_start
-    print(f"{context[:highlight_pos]}{Colors.BOLD}{Colors.RED}{search_text}{Colors.END}{context[highlight_pos+len(search_text):]}")
+    print(f"{context[:highlight_pos]}{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{context[highlight_pos+len(match_text):]}")
     print()
