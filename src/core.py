@@ -543,10 +543,8 @@ def _walk_decoder_chains(
         # normalize result
         if isinstance(dec_result, (list, tuple)):
             decoded_text = dec_result[0]
-            found_flag = bool(dec_result[1]) if len(dec_result) > 1 else False
         else:
             decoded_text = dec_result
-            found_flag = False
 
         # check for match_text (including blind mode) before recursing
         match_text = _find_match_text(decoded_text, search_text, blind_mode)
