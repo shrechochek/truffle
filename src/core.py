@@ -710,7 +710,8 @@ def _print_result(result, source_label: str | None = None):
             context_start = max(0, pos - 50)
             before = decoded[context_start:pos]
             after = decoded[after_start:after_end]
-            print(f"{before}{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{after}")
+            # print(f"{before}{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{after}")
+            print(f"{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{after}")
             print()
     else:
         print(decoded[:200])
