@@ -80,9 +80,7 @@ def print_stage_banner(title: str, columns: int):
     banner_text = f" {title} "
     spaces_len = (columns - len(banner_text)) // 2
     print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * columns}{core.Colors.END}")
-    print(
-        f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * spaces_len}{banner_text}{'=' * (spaces_len + (columns - len(banner_text)) % 2)}{core.Colors.END}"
-    )
+    print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * spaces_len}{banner_text}{'=' * (spaces_len + (columns - len(banner_text)) % 2)}{core.Colors.END}")
     print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * columns}{core.Colors.END}\n")
 
 
@@ -111,7 +109,7 @@ print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Started!{core.Colors.END}")
 columns = shutil.get_terminal_size(fallback=(80, 24)).columns
 
 if columns >= 84:
-    print(core.main_text_and_pig_art)
+    print(core.pig_art_and_main_text)
 elif columns >= 53:
     print(core.main_text)
 elif columns >= 32:

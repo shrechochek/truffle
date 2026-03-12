@@ -9,33 +9,6 @@ import decoders
 import encoders
 import searchers
 
-
-# ---------- Art & banners
-pig_art = r"""
-          ⣀⣤⣤⣶⣶⣶⣶⣦⣤⣄⣀           
- ⢀⡶⢻⡦⢀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⢀⣴⣾⡿ ⣠ 
- ⠠⣬⣷⣾⣡⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣌⣋⣉⣄⠘⠋  
-   ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⡄    
-   ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣾⣿⣷⣶⡄ 
-   ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ 
-   ⠸⣿⣿⣿⠛⠛⠛⠛⠛⠛⠛⠛⠻⠿⣿⣿⡿⠛⠛⠛⠋⠉⠉   
-    ⢻⣿⣿  ⢸⣿⡇     ⢻⣿⠃⠸⣿⡇      
-    ⠈⠿⠇   ⠻⠇     ⠈⠿  ⠻⠿
-"""
-
-main_text = r"""
-  _______ _____  _    _ ______ ______ _      ______ 
- |__   __|  __ \| |  | |  ____|  ____| |    |  ____|
-    | |  | |__) | |  | | |__  | |__  | |    | |__   
-    | |  |  _  /| |  | |  __| |  __| | |    |  __|   
-    | |  | | \ \| |__| | |    | |    | |____| |____  
-    |_|  |_|  \_\\____/|_|    |_|    |______|______|   
-"""
-
-# Combined banner for large terminals
-main_text_and_pig_art = main_text + "\n" + pig_art
-
-
 # ---------- Terminal & patterns
 TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 24))
 STATUS_COLS = TERMINAL_SIZE.columns
@@ -124,6 +97,39 @@ class Colors:
     BG_CYAN = "\033[46m"
     BG_WHITE = "\033[47m"
 
+# ---------- Art & banners
+pig_art = f"""
+          ⣀⣤⣤⣶⣶⣶⣶⣦⣤⣄⣀           
+ ⢀⡶⢻⡦⢀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⢀⣴⣾⡿ ⣠ 
+ ⠠⣬⣷⣾⣡⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣌⣋⣉⣄⠘⠋  
+   ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⡄    
+   ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣾⣿⣷⣶⡄ 
+   ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ 
+   ⠸⣿⣿⣿⠛⠛⠛⠛⠛⠛⠛⠛⠻⠿⣿⣿⡿⠛⠛⠛⠋⠉⠉   
+    ⢻⣿⣿  ⢸⣿⡇     ⢻⣿⠃⠸⣿⡇      
+    ⠈⠿⠇   ⠻⠇     ⠈⠿  ⠻⠿
+"""
+
+main_text = r"""
+  _______ _____  _    _ ______ ______ _      ______ 
+ |__   __|  __ \| |  | |  ____|  ____| |    |  ____|
+    | |  | |__) | |  | | |__  | |__  | |    | |__   
+    | |  |  _  /| |  | |  __| |  __| | |    |  __|   
+    | |  | | \ \| |__| | |    | |    | |____| |____  
+    |_|  |_|  \_\\____/|_|    |_|    |______|______|   
+"""
+
+pig_art_and_main_text = r"""
+                                                                  ⣀⣤⣤⣶⣶⣶⣶⣦⣤⣄⣀         
+  _______ _____  _    _ ______ ______ _      ______      ⢀⡶⢻⡦⢀⣠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⢀⣴⣾⡿ ⣠ 
+ |__   __|  __ \| |  | |  ____|  ____| |    |  ____|     ⠠⣬⣷⣾⣡⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⣌⣋⣉⣄⠘⠋
+    | |  | |__) | |  | | |__  | |__  | |    | |__          ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⡄   
+    | |  |  _  /| |  | |  __| |  __| | |    |  __|         ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣾⣿⣷⣶⡄ 
+    | |  | | \ \| |__| | |    | |    | |____| |____        ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡇ 
+    |_|  |_|  \_\\____/|_|    |_|    |______|______|       ⠸⣿⣿⣿⠛⠛⠛⠛⠛⠛⠛⠛⠻⠿⣿⣿⡿⠛⠛⠛⠋⠉⠉  
+                                                            ⢻⣿⣿  ⢸⣿⡇     ⢻⣿⠃⠸⣿⡇       
+                                                            ⠈⠿⠇   ⠻⠇     ⠈⠿  ⠻⠿
+"""
 
 # ----------------- Performance cache used by optimized decoders -----------------
 # Keep a simple in-memory cache for full decode results to avoid repeated heavy
@@ -349,7 +355,7 @@ def _find_recursive(
     blind_mode: bool = False,
 ) -> int:
     # Warn for expensive searches
-    if max_depth > 5 or (max_depth > 2 and enable_rot):
+    if max_depth > 5 or (max_depth > 2 and enable_rot) or source_label is not None:
         clear_status()
         print(
             f"{Colors.BRIGHT_CYAN}Searching with depth {max_depth}... This may take a while.{Colors.END}\n"
@@ -686,9 +692,9 @@ def _print_result(result, source_label: str | None = None):
     # clear terminal status and print nicely
     clear_status()
     if source_label:
-        print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
+        print(f"{Colors.BRIGHT_GREEN}File: {source_label}{Colors.END}")
     print(
-        f"Found results for chain: {Colors.GREEN}{result['chain_str']}{Colors.END}"
+        f"Found results for chain: {Colors.BRIGHT_YELLOW}{result['chain_str']}{Colors.END}"
     )
     # if "index" in result:
     #     print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
@@ -710,7 +716,8 @@ def _print_result(result, source_label: str | None = None):
             context_start = max(0, pos - 50)
             before = decoded[context_start:pos]
             after = decoded[after_start:after_end]
-            print(f"{before}{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{after}")
+            # print(f"{before}{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{after}")
+            print(f"{Colors.BOLD}{Colors.RED}{match_text}{Colors.END}{after}")
             print()
     else:
         print(decoded[:200])
