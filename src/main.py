@@ -80,9 +80,7 @@ def print_stage_banner(title: str, columns: int):
     banner_text = f" {title} "
     spaces_len = (columns - len(banner_text)) // 2
     print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * columns}{core.Colors.END}")
-    print(
-        f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * spaces_len}{banner_text}{'=' * (spaces_len + (columns - len(banner_text)) % 2)}{core.Colors.END}"
-    )
+    print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * spaces_len}{banner_text}{'=' * (spaces_len + (columns - len(banner_text)) % 2)}{core.Colors.END}")
     print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_MAGENTA}{'=' * columns}{core.Colors.END}\n")
 
 
