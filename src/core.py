@@ -460,7 +460,7 @@ def _walk_decoder_chains(
     if depth_left == 0:
         match_text = _find_match_text(current_text, search_text, blind_mode)
         if match_text is not None:
-            chain_str = " → ".join(chain_names)
+            chain_str = " -> ".join(chain_names)
             key = (chain_str, current_text[:100])
             if key not in found_results:
                 found_results.add(key)
@@ -555,7 +555,7 @@ def _walk_decoder_chains(
         match_text = _find_match_text(decoded_text, search_text, blind_mode)
         if match_text is not None:
             chain_names.append(name)
-            chain_str = " → ".join(chain_names)
+            chain_str = " -> ".join(chain_names)
             key = (chain_str, decoded_text[:100])
             if key not in found_results:
                 found_results.add(key)
