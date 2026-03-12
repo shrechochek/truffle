@@ -33,6 +33,9 @@ main_text = r"""
     |_|  |_|  \_\\____/|_|    |_|    |______|______|   
 """
 
+# Combined banner for large terminals
+main_text_and_pig_art = main_text + "\n" + pig_art
+
 
 # ---------- Terminal & patterns
 TERMINAL_SIZE = shutil.get_terminal_size(fallback=(80, 24))
@@ -214,17 +217,27 @@ def _format_progress(label: str, current: int, total: int, extra: str = "") -> s
 
 # ----------------- String extraction -----------------
 def get_strings(file_path: str, min_len: int = 4) -> list[str]:
+    # Preserve unicode printable extraction to support non-ASCII files (e.g. Cyrillic)
     with open(file_path, "rb") as f:
         content = f.read()
 
-    # regex extraction is typically faster than iterating char-by-char
-    if min_len <= 4:
-        matches = PRINTABLE_ASCII_PATTERN.findall(content)
-    else:
-        pattern = rb"[\x20-\x7e]{" + str(min_len).encode("ascii") + rb",}"
-        matches = re.findall(pattern, content)
+    decoded_content = content.decode("utf-8", errors="ignore")
+    result = []
+    current_chars = []
 
-    return [m.decode("ascii") for m in matches]
+    for ch in decoded_content:
+        if ch.isprintable():
+            current_chars.append(ch)
+            continue
+
+        if len(current_chars) >= min_len:
+            result.append("".join(current_chars))
+        current_chars = []
+
+    if len(current_chars) >= min_len:
+        result.append("".join(current_chars))
+
+    return result
 
 
 def get_vertical_strings(text: list[str]) -> list[str]:
@@ -440,7 +453,8 @@ def _walk_decoder_chains(
 ):
     # depth-left 0: check for match and register
     if depth_left == 0:
-        if search_text and search_text in current_text:
+        match_text = _find_match_text(current_text, search_text, blind_mode)
+        if match_text is not None:
             chain_str = " → ".join(chain_names)
             key = (chain_str, current_text[:100])
             if key not in found_results:
@@ -450,7 +464,7 @@ def _walk_decoder_chains(
                         "index": original_text.find(current_text),
                         "chain_str": chain_str,
                         "decoded": current_text,
-                        "match_text": search_text,
+                        "match_text": match_text,
                     },
                     source_label,
                 )
@@ -534,8 +548,9 @@ def _walk_decoder_chains(
             decoded_text = dec_result
             found_flag = False
 
-        # early register if decoder itself signals a match
-        if found_flag and search_text and search_text in decoded_text:
+        # check for match_text (including blind mode) before recursing
+        match_text = _find_match_text(decoded_text, search_text, blind_mode)
+        if match_text is not None:
             chain_names.append(name)
             chain_str = " → ".join(chain_names)
             key = (chain_str, decoded_text[:100])
@@ -546,7 +561,7 @@ def _walk_decoder_chains(
                         "index": original_text.find(decoded_text),
                         "chain_str": chain_str,
                         "decoded": decoded_text,
-                        "match_text": search_text,
+                        "match_text": match_text,
                     },
                     source_label,
                 )
