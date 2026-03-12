@@ -688,10 +688,10 @@ def _print_result(result, source_label: str | None = None):
     if source_label:
         print(f"{Colors.BRIGHT_BLUE}File: {source_label}{Colors.END}")
     print(
-        f"Found results for chain: {Colors.BRIGHT_YELLOW}{result['chain_str']}{Colors.END}"
+        f"Found results for chain: {Colors.GREEN}{result['chain_str']}{Colors.END}"
     )
-    if "index" in result:
-        print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
+    # if "index" in result:
+    #     print(f"{Colors.BRIGHT_GREEN}Index: {result['index']}{Colors.END}")
 
     decoded = result.get("decoded", "")
     match_text = result.get("match_text")
