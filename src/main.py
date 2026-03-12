@@ -111,7 +111,7 @@ print(f"{core.Colors.BOLD}{core.Colors.BRIGHT_GREEN}Started!{core.Colors.END}")
 columns = shutil.get_terminal_size(fallback=(80, 24)).columns
 
 if columns >= 84:
-    print(core.main_text_and_pig_art)
+    print(core.pig_art_and_main_text)
 elif columns >= 53:
     print(core.main_text)
 elif columns >= 32:
